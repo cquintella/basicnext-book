@@ -13,7 +13,7 @@ For the complete list of keywords, their semantic meanings, and decision statuse
 
 ## Appendix B: Language Diagnostics
 
-Basic Next is designed with a zero-warning policy. Diagnostics either reject the source entirely or report a clear runtime failure. 
+Basic Next is designed with a zero-warning policy. Diagnostics either reject the source entirely or report a clear runtime failure.
 
 Diagnostic behavior follows the accepted language contract and command
 reference:

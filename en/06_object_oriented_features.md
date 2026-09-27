@@ -2,7 +2,7 @@
 
 [← Previous: Functions and Program Structure](05_functions_and_program_structure.md) · [Contents](toc.md)
 
-While Basic Next provides `STRUCT` for simple value types, it uses `CLASS` and `INTERFACE` for reference types, encapsulation, and polymorphism. 
+While Basic Next provides `STRUCT` for simple value types, it uses `CLASS` and `INTERFACE` for reference types, encapsulation, and polymorphism.
 
 ## Reference Types (`CLASS`)
 
@@ -80,7 +80,7 @@ Multiple ways to construct a class are expressed with `PUBLIC STATIC FUNCTION` f
 
 ## Inheritance
 
-Basic Next supports single class inheritance using the `EXTENDS` keyword. A subclass inherits the methods and fields of its base class. 
+Basic Next supports single class inheritance using the `EXTENDS` keyword. A subclass inherits the methods and fields of its base class.
 
 If the base class has a constructor, the subclass constructor must call it as the first statement using the `SUPER` keyword.
 

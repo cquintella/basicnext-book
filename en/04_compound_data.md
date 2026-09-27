@@ -86,7 +86,7 @@ ELSE
 END IF
 ```
 
-In the `ELSE` branch above, the compiler knows `line` cannot be `EOF`, so its type is narrowed to `STRING`, making it safe to use in `PRINT`. 
+In the `ELSE` branch above, the compiler knows `line` cannot be `EOF`, so its type is narrowed to `STRING`, making it safe to use in `PRINT`.
 
 In version 0.3, if an `IF` statement has no `ELSE` branch and all of its branches unconditionally terminate (e.g., via `RETURN` or `STOP`), the type is automatically narrowed in the remainder of the block:
 
@@ -103,7 +103,7 @@ You can also test for `NULL` or `NA` using `IS NULL` or `IS NA`.
 
 ## Error Handling
 
-Basic Next does not use exceptions for error handling. Fallible operations explicitly return their success value or a built-in `Error` object. 
+Basic Next does not use exceptions for error handling. Fallible operations explicitly return their success value or a built-in `Error` object.
 
 The `Error` object provides standard properties: `Code AS INTEGER` and `Message AS STRING`. Functions that might fail indicate this by returning their standard type `OR Error`.
 

@@ -98,7 +98,7 @@ LET workers AS INTEGER OR Error = HOST.NumProcs()
 
 ### `HOST.Console`
 
-The runtime provides a default console used implicitly by `PRINT` and `INPUT()`. To interact explicitly with the terminal window, use the `HOST.Console` capability. 
+The runtime provides a default console used implicitly by `PRINT` and `INPUT()`. To interact explicitly with the terminal window, use the `HOST.Console` capability.
 
 `HOST.Console` provides methods for clearing the screen, emitting a beep, positioning the cursor, and querying the window size:
 

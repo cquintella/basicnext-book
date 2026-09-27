@@ -18,7 +18,7 @@ more on: [BNDispatch](16_bndispatch.md)
 
 ## Filesystem Access Policy with Optional Sandboxing
 
-Basic Next keeps filesystem access explicit without forcing every program into a sandbox. 
+Basic Next keeps filesystem access explicit without forcing every program into a sandbox.
 
 Bein so, the default build remains compatible with ordinary operating-system permissions. Sandboxing is an opt-in artifact profile selected when the program is built or run.
 

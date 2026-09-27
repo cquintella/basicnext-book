@@ -51,7 +51,7 @@ In version 0.3, only module-level functions and `STATIC` class methods can be us
 
 ## Modules and Visibility
 
-Every `.bn` source file is a module. By default, any `FUNCTION`, `CLASS`, `STRUCT`, or `INTERFACE` declared in a module is private to that module. 
+Every `.bn` source file is a module. By default, any `FUNCTION`, `CLASS`, `STRUCT`, or `INTERFACE` declared in a module is private to that module.
 
 To make a declaration visible to other files, you must precede it with the `EXPORT` keyword:
 
@@ -68,7 +68,7 @@ END FUNCTION
 
 ## Importing Modules
 
-To use exported declarations from another module, you must import it using the `IMPORT` keyword. Every import requires an explicit local alias using `AS`. 
+To use exported declarations from another module, you must import it using the `IMPORT` keyword. Every import requires an explicit local alias using `AS`.
 
 ```basic
 // In main.bn
