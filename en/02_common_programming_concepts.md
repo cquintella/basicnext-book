@@ -87,13 +87,40 @@ CONST ACTIVE = TRUE        // BOOLEAN
 CONST APP_NAME = "MyApp"   // STRING
 ```
 
-Inference applies to literals only. A specific width or signedness, a negative value, an expression, a vector, or a special value such as `NULL` or `EOF` requires the type to be written:
+A minus sign written directly before a single number is part of that literal, so negative constants are inferred the same way. The value is what counts: `-0xFF` is `-255`.
+
+```basic
+CONST SENTINEL = -1        // INT32
+CONST OFFSET = -2.5        // FLOAT64
+CONST MASK = -0xFF         // INT32, value -255
+```
+
+Inference applies to literals only. A specific width or signedness, an expression (including `-1 + 2`), a vector, or a special value such as `NULL` or `EOF` requires the type to be written:
 
 ```basic
 CONST BUFFER_SIZE AS UINT32 = 4096
-CONST SENTINEL AS INTEGER = -1
 CONST AREA AS INTEGER = 4 * 5
 ```
+
+A constant must fit its type. `CONST WIDE = 0x80000000` is rejected because the inferred `INT32` cannot hold it, and `CONST FLAGS AS UINT32 = -1` is rejected because an unsigned type has no negative values.
+
+A module constant, declared with `EXPORT CONST` after the module's imports, follows the same rules and is read through the importing module's alias:
+
+```basic
+// Limits.bn
+EXPORT CONST PI = 3.141592653589793
+EXPORT CONST MIN_LEVEL = -3
+```
+
+```basic
+IMPORT Limits AS L
+
+FUNCTION Start() AS VOID
+    PRINT L.PI, " ", L.MIN_LEVEL
+END FUNCTION
+```
+
+Its initializer must be a single literal, possibly negative; an expression is a compile-time error even with `AS`.
 
 Note that `CONST` fixes the binding, not what the binding refers to. A constant holding a class instance cannot be pointed at a different instance, and the instance's fields remain mutable.
 
@@ -246,6 +273,16 @@ FUNCTION Start() AS VOID
     PRINT ratio, truncated, flag
 END FUNCTION
 ```
+
+One case needs no `AS`: a whole-number literal written directly as the initializer of a `LET`, `CONST`, or `EXPORT CONST` declared as `FLOAT`, `FLOAT32`, or `FLOAT64`. The literal already states the value, so it is stored as that floating-point number:
+
+```basic
+LET scale AS FLOAT = 2             // 2.0
+LET mask AS FLOAT = 0xFF           // 255.0
+CONST LOW AS FLOAT32 = -16         // -16.0
+```
+
+This applies to literals only. `LET ratio AS FLOAT = count` still needs `count AS FLOAT`, and so does any expression. The integer must be exactly representable in the declared type, so `LET x AS FLOAT32 = 16777217` is rejected: `FLOAT32` cannot hold that value without rounding. Assignments, arguments, and return values are unchanged and still require `AS`.
 
 Converting from floating-point to integer truncates the fractional part towards zero; it does not round. A value outside the target type's range raises `INVALID_NUMERIC_CONVERSION`. Converting to `BOOLEAN` treats numeric zero and the empty string as `FALSE` and anything else as `TRUE` — a conversion that must be asked for, which is what distinguishes it from the implicit truthiness the language does not have.
 
