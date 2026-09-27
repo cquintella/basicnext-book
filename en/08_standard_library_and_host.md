@@ -58,135 +58,621 @@ when the last strong reference is gone. See the full API in
 
 ## HOST capabilities
 
-Interaction with the underlying operating system—such as reading command-line arguments or checking the system clock—requires explicitly importing a capability from the `HOST` root.
+A program reaches the operating system only through `HOST`. Each capability
+is imported explicitly (`IMPORT HOST.Clock AS Clock`), except `HOST.Args` and
+`HOST.NumProcs`, which need no import. Nothing reaches the network, the file
+system, or other processes unless the program says so in its imports, and a
+restricted host can refuse an import before `Start` runs
+(`HOST_CAPABILITY_UNAVAILABLE`).
+
+Most operations can fail, so they return `T OR Error`. The examples below
+test `IS Error` and use the value in the `ELSE` branch, where it has been
+narrowed to `T`.
+
+| Capability | Import | Use it for |
+| --- | --- | --- |
+| `HOST.Args` | none | command-line arguments |
+| `HOST.Clock` | `IMPORT HOST.Clock AS Clock` | wall-clock time and elapsed time |
+| `HOST.NumProcs` | none | sizing a worker pool |
+| `HOST.Console` | `IMPORT HOST.Console AS CON` | clearing the screen, positioned text, window size |
+| `HOST.Random` | `IMPORT HOST.Random AS R` | reproducible pseudorandom numbers |
+| `HOST.FileSystem` | `IMPORT HOST.FileSystem AS FS` | reading and writing files |
+| `HOST.Exec` | `IMPORT HOST.Exec AS Exec` | running another program |
+| `HOST.Net` | `IMPORT HOST.Net AS Net` | addresses, name resolution, TCP, UDP, ping |
+
+The normative contracts are in the language specification:
+[`host.md`](https://github.com/cquintella/BasicNext/blob/main/language/0.6/host.md),
+[`console.md`](https://github.com/cquintella/BasicNext/blob/main/language/0.6/console.md),
+[`host-exec.md`](https://github.com/cquintella/BasicNext/blob/main/language/0.6/host-exec.md), and
+[`host-net.md`](https://github.com/cquintella/BasicNext/blob/main/language/0.6/host-net.md).
 
 ### `HOST.Args`
 
-`HOST.Args` provides access to the arguments passed by the host. **Only the executable module** (the module containing the `Start` function) is permitted to access `HOST.Args`. It does not require an `IMPORT` statement.
-
-You access the arguments using indexing (`HOST.Args[index]`) and check the total number using `LEN(HOST.Args)`. Index `0` is the absolute executable name or path supplied by the host. Further program arguments follow `--`.
+`HOST.Args` holds the command-line arguments. Only the executable module (the
+one with `Start`) may use it. `HOST.Args[0]` is the absolute path of the
+program; the arguments given after `--` follow it. `LEN(HOST.Args)` counts
+them all, including entry `0`.
 
 ```basic
-FUNCTION Start() AS VOID
-    IF LEN(HOST.Args) > 1 THEN
-        PRINT "First user argument: " + HOST.Args[1]
+FUNCTION Start() AS INTEGER
+    IF LEN(HOST.Args) < 2 THEN
+        PRINT "usage: greet NAME..."
+        RETURN 2
     END IF
+    FOR i AS INTEGER = 1 TO LEN(HOST.Args) - 1
+        PRINT "Hello, " + HOST.Args[i] + "!"
+    END FOR
+    RETURN 0
 END FUNCTION
 ```
 
+```
+$ bni run greet.bn
+usage: greet NAME...
+$ bni run greet.bn -- Ana Bia
+Hello, Ana!
+Hello, Bia!
+```
+
+Returning an `INTEGER` from `Start` sets the exit status, so the usage case
+exits with `2`.
+
 ### `HOST.Clock`
+
+`Clock.Now()` returns a `TIMESTAMP`: milliseconds since 1970-01-01T00:00:00Z.
+`Clock.Timer()` returns nanoseconds from an unspecified origin as an `INT64`
+that never decreases. Use `Now` for calendar time and `Timer` for measuring a
+duration; a `Timer` value is not a date.
 
 ```basic
 IMPORT HOST.Clock AS Clock
+
+FUNCTION Start() AS VOID
+    LET now AS TIMESTAMP = Clock.Now()
+    PRINT "Now:", now
+
+    LET started AS INT64 = Clock.Timer()
+    LET total AS INTEGER = 0
+    FOR i AS INTEGER = 1 TO 100000
+        total = total + i % 7
+    END FOR
+    LET elapsed AS INT64 = Clock.Timer() - started
+    PRINT "Loop result:", total
+    PRINT "Elapsed (ns) > 0:", elapsed > 0
+END FUNCTION
 ```
 
-`HOST.Clock` provides time measurements:
-- `Clock.Now() AS TIMESTAMP`: Returns the current signed UTC Unix-epoch time in milliseconds.
-- `Clock.Timer() AS INT64`: Returns a monotonically increasing count of nanoseconds. It does not represent a calendar time and is only used for measuring elapsed durations safely.
+```
+Now: 1790534062927
+Loop result: 300000
+Elapsed (ns) > 0: TRUE
+```
 
 ### `HOST.NumProcs`
 
-`HOST.NumProcs()` needs no import and returns the logical processor count
-available to the current process. This respects host or container limits where
-they are reported, so it is appropriate for selecting a bounded worker-pool
-size rather than detecting physical CPU cores. It is available in the native
-interpreter.
+`HOST.NumProcs()` returns the number of logical processors available to the
+process, respecting container limits where the host reports them. It is the
+right input for choosing how many workers to start. It returns
+`INTEGER OR Error`, so a program keeps a fallback:
 
 ```basic
-LET workers AS INTEGER OR Error = HOST.NumProcs()
+FUNCTION Start() AS VOID
+    LET found AS INTEGER OR Error = HOST.NumProcs()
+    LET workers AS INTEGER = 1
+    IF found IS Error THEN
+        PRINT "Processor count unavailable:", found.Message
+    ELSE
+        workers = found
+    END IF
+    PRINT "Workers:", workers
+END FUNCTION
 ```
 
 ### `HOST.Console`
 
-The runtime provides a default console used implicitly by `PRINT` and `INPUT()`. To interact explicitly with the terminal window, use the `HOST.Console` capability.
+`PRINT` and `INPUT()` need no import. `HOST.Console` adds screen control:
 
-`HOST.Console` provides methods for clearing the screen, emitting a beep, positioning the cursor, and querying the window size:
+| Method | Needs a terminal (TTY) |
+| --- | --- |
+| `Cls()` — clear the screen and move the cursor home | no |
+| `Beep()` — ring the terminal bell | no |
+| `PrintAt(column, row, text)` — write at a 1-based position, no newline | yes |
+| `NumCols()`, `NumRows()` — current window size | yes |
 
 ```basic
 IMPORT HOST.Console AS CON
 
-CON.Cls()
-CON.Beep()
-CON.PrintAt(1, 1, "Hello at top-left") // 1-based coordinates
-LET cols AS INTEGER = CON.NumCols()
-LET rows AS INTEGER = CON.NumRows()
+FUNCTION Start() AS VOID
+    CON.Cls()
+    LET title AS STRING = "Basic Next"
+    LET column AS INTEGER = (CON.NumCols() - LEN(title)) DIV 2 + 1
+    CON.PrintAt(column, 1, title)
+    CON.PrintAt(1, 3, "Window size:")
+    PRINT
+    PRINT CON.NumCols(), "x", CON.NumRows()
+    CON.Beep()
+END FUNCTION
 ```
+
+In an 80×24 terminal this centres the title on row 1 (column
+`(80 - 10) DIV 2 + 1 = 36`) and prints `80 x 24`. When standard output is
+redirected to a file or a pipe, `Cls` and `Beep` still run, but the first
+call to `NumCols` stops the program:
+
+```
+error[HOST_CAPABILITY_UNAVAILABLE]: window size requires a TTY
+```
+
+`PrintAt` does not wrap or clip: a position outside the window, or text that
+would run past the right edge, is `INDEX_OUT_OF_BOUNDS`.
 
 ### `HOST.Random`
 
-`HOST.Random` provides pseudorandom number generation.
+`R.Random()` returns a `FLOAT` in `[0, 1)`. `R.Seed(n)` makes the following
+sequence deterministic, and the same seed gives the same sequence under `bni`
+and `bnc`. Without `Seed`, each run starts from a different state.
 
 ```basic
 IMPORT HOST.Random AS R
 
-LET chance AS FLOAT = R.Random() // Returns a FLOAT in [0, 1)
-R.Seed(42) // Explicitly seed the generator
+FUNCTION RollDie() AS INTEGER
+    RETURN (R.Random() * 6.0) AS INTEGER + 1
+END FUNCTION
+
+FUNCTION Start() AS VOID
+    R.Seed(42)
+    PRINT RollDie(), RollDie(), RollDie()
+    R.Seed(42)
+    PRINT RollDie(), RollDie(), RollDie()
+END FUNCTION
 ```
+
+```
+3 6 6
+3 6 6
+```
+
+`HOST.Random` is not suitable for keys, tokens, or passwords; use the
+`BNCrypto` module for anything security-related.
 
 ### `HOST.FileSystem`
 
-`HOST.FileSystem` provides access to the local file system. The `FS.File` class is used to read and write files.
+`FS.Open(path, mode)` returns an `FS.File OR Error`. The mode is `FS.READ`,
+`FS.WRITE` (create or truncate), or `FS.APPEND` (write at the end, creating
+the file if needed). Close every file you open: `Close()` flushes the data and
+returns `VOID OR Error`, which is the only place a failed flush is reported.
+Text is UTF-8.
+
+Writing, appending, reading line by line until `EOF`, checking, and deleting:
 
 ```basic
 IMPORT HOST.FileSystem AS FS
 
-LET file AS FS.File OR Error = FS.Open("data.txt", FS.READ)
-IF file IS Error THEN
-    PRINT "Could not open file"
-ELSE
-    LET content AS STRING OR Error = file.ReadAll()
-    file.Close()
-END IF
+FUNCTION WriteLines(path AS STRING) AS VOID OR Error
+    LET file AS FS.File OR Error = FS.Open(path, FS.WRITE)
+    IF file IS Error THEN
+        RETURN file
+    END IF
+    LET first AS VOID OR Error = file.WriteLine("apples 3")
+    IF first IS Error THEN
+        RETURN first
+    END IF
+    LET second AS VOID OR Error = file.WriteLine("pears 5")
+    IF second IS Error THEN
+        RETURN second
+    END IF
+    RETURN file.Close()
+END FUNCTION
+
+FUNCTION AppendLine(path AS STRING, text AS STRING) AS VOID OR Error
+    LET file AS FS.File OR Error = FS.Open(path, FS.APPEND)
+    IF file IS Error THEN
+        RETURN file
+    END IF
+    LET written AS VOID OR Error = file.WriteLine(text)
+    IF written IS Error THEN
+        RETURN written
+    END IF
+    RETURN file.Close()
+END FUNCTION
+
+FUNCTION PrintLines(path AS STRING) AS VOID OR Error
+    LET file AS FS.File OR Error = FS.Open(path, FS.READ)
+    IF file IS Error THEN
+        RETURN file
+    END IF
+    LET number AS INTEGER = 0
+    WHILE TRUE
+        LET line AS STRING OR EOF OR Error = file.ReadLine()
+        IF line IS Error THEN
+            RETURN line
+        END IF
+        IF line IS EOF THEN
+            EXIT WHILE
+        END IF
+        number = number + 1
+        PRINT number, line
+    END WHILE
+    RETURN file.Close()
+END FUNCTION
+
+FUNCTION Start() AS INTEGER
+    LET path AS STRING = "stock.txt"
+    LET written AS VOID OR Error = WriteLines(path)
+    IF written IS Error THEN
+        PRINT "write failed:", written.Message
+        RETURN 1
+    END IF
+    LET appended AS VOID OR Error = AppendLine(path, "plums 8")
+    IF appended IS Error THEN
+        PRINT "append failed:", appended.Message
+        RETURN 1
+    END IF
+    LET listed AS VOID OR Error = PrintLines(path)
+    IF listed IS Error THEN
+        PRINT "read failed:", listed.Message
+        RETURN 1
+    END IF
+    PRINT "exists before delete:", FS.Exists(path)
+    LET removed AS VOID OR Error = FS.DeleteFile(path)
+    IF removed IS Error THEN
+        PRINT "delete failed:", removed.Message
+        RETURN 1
+    END IF
+    PRINT "exists after delete:", FS.Exists(path)
+    RETURN 0
+END FUNCTION
 ```
 
+```
+1 apples 3
+2 pears 5
+3 plums 8
+exists before delete: TRUE
+exists after delete: FALSE
+```
 
-### `HOST.Exec` (0.5.1)
+`ReadLine()` returns `STRING OR EOF OR Error`, so the loop stops on `EOF` and
+reports a genuine failure separately. `ReadAll()` returns the rest of the file
+as one `STRING`.
 
-> **Status:** Shipped in 0.5.1. The capability is available on both the
-> interpreter and the native (LLVM) path, with the E01–E14 acceptance matrix
-> green on both. Execution is governed by the execution policy (restricted
-> profiles deny it by default). Contract: [0.6 language specification — `HOST.Exec`](../../../language/0.6/0.6.md#hostexec-051) and [`host-exec.md`](../../library/host-exec.md).
+A file is used either for text (`ReadLine`, `ReadAll`, `Write`, `WriteLine`)
+or for bytes (`ReadBytes`, `WriteBytes`), never both; the first successful
+call decides. Bytes live in a `POINTER TO BYTE[]` region:
 
-`HOST.Exec` runs an **external program** and captures its output, in the style of a language-level `exec()`: the host **spawns** a child, **waits** until it finishes, and returns a structured result. It does **not** replace the Basic Next process image (that would be POSIX `execve`, which is out of 0.5.1).
+```basic
+IMPORT HOST.FileSystem AS FS
+
+FUNCTION Start() AS INTEGER
+    LET path AS STRING = "header.bin"
+    LET header AS POINTER TO BYTE[] = NEW BYTE[4]
+    header[0] = 0x42
+    header[1] = 0x4E
+    header[2] = 0x00
+    header[3] = 0x06
+
+    LET output AS FS.File OR Error = FS.Open(path, FS.WRITE)
+    IF output IS Error THEN
+        PRINT "open failed:", output.Message
+        RETURN 1
+    END IF
+    LET written AS VOID OR Error = output.WriteBytes(header, LEN(header))
+    LET closed AS VOID OR Error = output.Close()
+    IF written IS Error OR closed IS Error THEN
+        PRINT "write failed"
+        RETURN 1
+    END IF
+
+    LET input AS FS.File OR Error = FS.Open(path, FS.READ)
+    IF input IS Error THEN
+        PRINT "open failed:", input.Message
+        RETURN 1
+    END IF
+    LET buffer AS POINTER TO BYTE[] = NEW BYTE[16]
+    LET count AS INTEGER OR EOF OR Error = input.ReadBytes(buffer)
+    input.Close()
+    IF count IS INTEGER THEN
+        PRINT "read", count, "bytes:", buffer[0], buffer[1], buffer[2], buffer[3]
+    END IF
+    RELEASE header
+    RELEASE buffer
+    FS.DeleteFile(path)
+    RETURN 0
+END FUNCTION
+```
+
+```
+read 4 bytes: 66 78 0 6
+```
+
+### `HOST.Exec`
+
+`Exec.Run(program, args)` starts another program, waits for it, and returns
+an `Exec.Result` with `ReturnCode`, `Stdout`, and `Stderr`. The program is
+found through `PATH` or given as a path; no shell is involved, so there is no
+quoting or globbing, and each argument is passed exactly as written. The
+child's standard input is closed.
+
+There are two kinds of outcome, and they are handled differently. A program
+that ran and exited with a non-zero code is still a `Result`: the program
+decides what the code means. An `Error` means the program could not be run
+at all, or the host refused, timed out (60 s by default), or captured more
+than 16 MiB on a stream.
 
 ```basic
 IMPORT HOST.Exec AS Exec
 
-FUNCTION Start() AS VOID
-    LET args AS STRING[1]
-    args[0] = "-s"
-    LET r AS Exec.Result OR Error = Exec.Run("uname", args)
-    IF r IS Error THEN
-        PRINT r.Message
-        STOP 1
+FUNCTION Report(program AS STRING, argument AS STRING) AS VOID
+    LET args AS STRING[1] = [argument]
+    LET result AS Exec.Result OR Error = Exec.Run(program, args)
+    IF result IS Error THEN
+        PRINT program, "could not run:", result.Message
+        RETURN
     END IF
-    PRINT r.ReturnCode
-    PRINT r.Stdout
+    PRINT program, argument, "returned", result.ReturnCode
+    PRINT "  stdout:", result.Stdout
+    PRINT "  stderr:", result.Stderr
+END FUNCTION
+
+FUNCTION Start() AS VOID
+    Report("uname", "-s")
+    Report("ls", "/no/such/dir")
+    Report("no-such-program", "x")
 END FUNCTION
 ```
 
-| Piece | Contract |
-| --- | --- |
-| Import | `IMPORT HOST.Exec AS Exec` — no new reserved word |
-| Primary API | `Run(program AS STRING, args AS STRING[]) AS Exec.Result OR Error` |
-| `Exec.Result` | `ReturnCode AS INT64` (child return code), `Stdout AS STRING`, `Stderr AS STRING` |
-| Child stdin | Closed (no input blob in 0.5.1) |
-| Shell | Forbidden as the implementation of `Run` (no `sh -c` / `cmd /c` default) |
-| Non-zero child code | Still a `Result` — inspect `ReturnCode`; `Error` is for Host/OS launch or capture failure |
-| Signal termination (POSIX) | `ReturnCode = -signal` (e.g. `-15` for SIGTERM); the completed spawn stays a `Result` |
-| Capture limits | 16 MiB per stream and a 60 s wall-clock ceiling by default; policy may lower them. Overflow/timeout returns a stable `Error`, never truncated output |
-| Restricted profiles | Deny `HOST.Exec` by default (for example Jupyter-style hosts) |
-| Policy inputs | `BN_EXEC_POLICY=deny`, `BN_EXEC_CAPTURE_LIMIT=<bytes>`, `BN_EXEC_TIMEOUT_MS=<ms>` narrow the call on `bni run` and in compiled artifacts alike; they can only reduce the ceilings. A malformed value stops the process before `Start` (`CONFIG_INVALID`, exit 2) on both backends |
+On macOS:
 
-Do not confuse `HOST.Exec` with `HOST.SQLite` / `Db.Exec(sql)` (SQL execution), which is a different capability.
+```
+uname -s returned 0
+  stdout: Darwin
+
+  stderr:
+ls /no/such/dir returned 1
+  stdout:
+  stderr: ls: /no/such/dir: No such file or directory
+
+no-such-program could not run: No such file or directory (os error 2)
+```
+
+The captured text includes the child's own final newline. `Run` takes the
+argument list as a vector; a function of your own cannot take a
+variable-length vector, so build a fixed-size one where you call `Run`.
+Restricted execution policies deny `HOST.Exec` entirely.
 
 ### `HOST.Net`
 
-`HOST.Net` is a native-host capability added in version 0.3 for IPv4/IPv6 addressing, system resolution, TCP, UDP, bounded ICMP Echo, and direct-neighbor lookup. The operating system owns the networking stack.
+Networking is typed: an `Address` is parsed and validated before it can be
+used, an `Endpoint` pairs an address with a port, and every operation that
+waits takes a timeout in milliseconds. No example below needs the Internet.
+
+**Addresses, networks, and name resolution.** `Net.Address.Parse` accepts IPv4
+and IPv6 text and rejects host names; `Net.Resolve` is the only operation that
+turns a name into addresses.
 
 ```basic
 IMPORT HOST.Net AS Net
+
+FUNCTION Describe(text AS STRING) AS VOID
+    LET address AS Net.Address OR Error = Net.Address.Parse(text)
+    IF address IS Error THEN
+        PRINT text, "is not an address:", address.Message
+    ELSE
+        PRINT address.ToString(), "loopback:", address.IsLoopback(), "private:", address.IsPrivate()
+    END IF
+END FUNCTION
+
+FUNCTION Start() AS INTEGER
+    Describe("127.0.0.1")
+    Describe("192.168.10.7")
+    Describe("::1")
+    Describe("example.com")
+
+    LET lan AS Net.CIDR OR Error = Net.CIDR.Parse("192.168.10.0/24")
+    LET host AS Net.Address OR Error = Net.Address.Parse("192.168.10.7")
+    IF lan IS Error OR host IS Error THEN
+        PRINT "parse failed"
+        RETURN 1
+    END IF
+    PRINT "prefix:", lan.PrefixLength(), "contains 192.168.10.7:", lan.Contains(host)
+
+    LET found AS Net.Addresses OR Error = Net.Resolve("localhost", 2000)
+    IF found IS Error THEN
+        PRINT "resolve failed:", found.Message
+        RETURN 1
+    END IF
+    FOR i AS INTEGER = 0 TO found.Count() - 1
+        LET item AS Net.Address OR Error = found.Get(i)
+        IF item IS Error THEN
+            PRINT "entry", i, "failed:", item.Message
+        ELSE
+            PRINT "localhost ->", item.ToString()
+        END IF
+    END FOR
+    RETURN 0
+END FUNCTION
 ```
+
+```
+127.0.0.1 loopback: TRUE private: FALSE
+192.168.10.7 loopback: FALSE private: TRUE
+::1 loopback: TRUE private: FALSE
+example.com is not an address: invalid IP address
+prefix: 24 contains 192.168.10.7: TRUE
+localhost -> ::1
+localhost -> 127.0.0.1
+```
+
+`Resolve` returns an `Addresses` collection in the system's order, read with
+`Count()` and `Get(i)`.
+
+**TCP.** `Net.TCPListen` opens listeners on a set of endpoints, `Accept` waits
+for a connection, and `Net.TCPConnect` connects. `Read` and `Write` move bytes
+through a `POINTER TO BYTE[]` buffer; `Read` returns `EOF` when the peer has
+closed. This program is both server and client on the loopback interface:
+
+```basic
+IMPORT HOST.Net AS Net
+
+FUNCTION Start() AS INTEGER
+    LET loopback AS Net.Address OR Error = Net.Address.Parse("127.0.0.1")
+    IF loopback IS Error THEN
+        RETURN 1
+    END IF
+    // Port 0 asks the system for any free port.
+    LET wanted AS Net.Endpoint OR Error = Net.Endpoint.Create(loopback, 0)
+    IF wanted IS Error THEN
+        RETURN 1
+    END IF
+    LET endpoints AS Net.Endpoint[1] = [wanted]
+    LET listener AS Net.TCPListener OR Error = Net.TCPListen(endpoints, 8)
+    IF listener IS Error THEN
+        PRINT "listen failed:", listener.Message
+        RETURN 1
+    END IF
+    LET bound AS Net.Endpoint OR Error = listener.LocalEndpoint()
+    IF bound IS Error THEN
+        RETURN 1
+    END IF
+    PRINT "listening on port", bound.Port()
+
+    LET client AS Net.TCPStream OR Error = Net.TCPConnect(bound, 2000)
+    LET server AS Net.TCPStream OR Error = listener.Accept(2000)
+    IF client IS Error OR server IS Error THEN
+        PRINT "connection failed"
+        RETURN 1
+    END IF
+
+    LET message AS POINTER TO BYTE[] = NEW BYTE[2]
+    message[0] = 72    // 'H'
+    message[1] = 105   // 'i'
+    LET sent AS INTEGER OR Error = client.Write(message, 2)
+    IF sent IS Error THEN
+        PRINT "write failed:", sent.Message
+        RETURN 1
+    END IF
+
+    LET received AS POINTER TO BYTE[] = NEW BYTE[2]
+    LET count AS INTEGER OR EOF OR Error = server.Read(received, 2)
+    IF count IS INTEGER THEN
+        PRINT "server read", count, "bytes:", received[0], received[1]
+    END IF
+
+    client.Close()
+    server.Close()
+    listener.Close()
+    RELEASE message
+    RELEASE received
+    RETURN 0
+END FUNCTION
+```
+
+```
+listening on port 64483
+server read 2 bytes: 72 105
+```
+
+Port `0` asks the system for a free port; `LocalEndpoint()` reports which one
+was chosen.
+
+**UDP.** `Net.UDPBind` opens a socket, `SendTo` sends one datagram, and
+`Receive(size, timeout)` returns a `UDPPacket` that knows its source, its
+size, and whether it was truncated to fit:
+
+```basic
+IMPORT HOST.Net AS Net
+
+FUNCTION Start() AS INTEGER
+    LET loopback AS Net.Address OR Error = Net.Address.Parse("127.0.0.1")
+    IF loopback IS Error THEN
+        RETURN 1
+    END IF
+    LET any AS Net.Endpoint OR Error = Net.Endpoint.Create(loopback, 0)
+    IF any IS Error THEN
+        RETURN 1
+    END IF
+    LET receiver AS Net.UDPSocket OR Error = Net.UDPBind(any)
+    LET sender AS Net.UDPSocket OR Error = Net.UDPBind(any)
+    IF receiver IS Error OR sender IS Error THEN
+        PRINT "bind failed"
+        RETURN 1
+    END IF
+    LET target AS Net.Endpoint OR Error = receiver.LocalEndpoint()
+    IF target IS Error THEN
+        RETURN 1
+    END IF
+
+    LET datagram AS POINTER TO BYTE[] = NEW BYTE[3]
+    datagram[0] = 1
+    datagram[1] = 2
+    datagram[2] = 3
+    LET sent AS INTEGER OR Error = sender.SendTo(target, datagram, 3)
+    IF sent IS Error THEN
+        PRINT "send failed:", sent.Message
+        RETURN 1
+    END IF
+
+    // Receive at most 16 bytes, waiting up to 2000 ms.
+    LET packet AS Net.UDPPacket OR Error = receiver.Receive(16, 2000)
+    IF packet IS Error THEN
+        PRINT "receive failed:", packet.Message
+        RETURN 1
+    END IF
+    LET copy AS POINTER TO BYTE[] = NEW BYTE[16]
+    LET copied AS INTEGER OR Error = packet.CopyTo(copy, 16)
+    IF copied IS INTEGER THEN
+        PRINT "received", packet.Size(), "bytes, truncated:", packet.WasTruncated()
+        PRINT "payload:", copy[0], copy[1], copy[2]
+    END IF
+
+    sender.Close()
+    receiver.Close()
+    RELEASE datagram
+    RELEASE copy
+    RETURN 0
+END FUNCTION
+```
+
+```
+received 3 bytes, truncated: FALSE
+payload: 1 2 3
+```
+
+**Ping.** `Net.Ping` sends one ICMP Echo to a parsed address. Timeout,
+unreachable host, and missing ICMP permission are distinct errors, and a host
+without ICMP permission still allows every other `HOST.Net` operation.
+
+```basic
+IMPORT HOST.Net AS Net
+
+FUNCTION Start() AS INTEGER
+    LET target AS Net.Address OR Error = Net.Address.Parse("127.0.0.1")
+    IF target IS Error THEN
+        RETURN 1
+    END IF
+    LET reply AS Net.PingReply OR Error = Net.Ping(target, 1000)
+    IF reply IS Error THEN
+        // Timeout, unreachable, and missing ICMP permission are distinct errors.
+        PRINT "ping failed:", reply.Code, reply.Message
+        RETURN 1
+    END IF
+    PRINT "reply from", reply.Address().ToString(), "in", reply.RoundTripMicroseconds(), "us"
+    RETURN 0
+END FUNCTION
+```
+
+```
+reply from 127.0.0.1 in <round-trip time> us
+```
+
+### Interpreter and compiler support
+
+Every example in this section runs under `bni run`. `bnc` compiles `Args`,
+`Clock`, `Console`, file reading and writing, `Exec`, TCP, and `Ping`, but
+0.6 rejects some operations with `TARGET_UNSUPPORTED_HOST`, among them
+`HOST.NumProcs`, `FS.Exists`, `Net.CIDR`, and `UDPSocket.LocalEndpoint`.
+Natively, `R.Random()` must be seeded with `R.Seed` in the same function.
+When `bnc` refuses an operation, run the program with `bni` instead.
 
 ## External module references
 
