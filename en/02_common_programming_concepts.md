@@ -226,7 +226,7 @@ LET remainder AS INTEGER = 5 % 2     // 1
 
 `/` always produces a `FLOAT`, even when both operands are integers. `DIV` performs integer division, truncating towards zero. `%` gives the integer remainder. Writing three operators instead of one removes the most common source of quiet arithmetic error in other languages, where `5 / 2` yields `2` or `2.5` depending on the static types of the operands.
 
-`+` also concatenates strings. It does not concatenate a string with a number; convert the number first.
+`+` also concatenates strings. It does not concatenate a string with a number; convert the number first with `AS STRING` (see "Explicit Conversion" below).
 
 ### Comparison
 
@@ -285,6 +285,22 @@ CONST LOW AS FLOAT32 = -16         // -16.0
 This applies to literals only. `LET ratio AS FLOAT = count` still needs `count AS FLOAT`, and so does any expression. The integer must be exactly representable in the declared type, so `LET x AS FLOAT32 = 16777217` is rejected: `FLOAT32` cannot hold that value without rounding. Assignments, arguments, and return values are unchanged and still require `AS`.
 
 Converting from floating-point to integer truncates the fractional part towards zero; it does not round. A value outside the target type's range raises `INVALID_NUMERIC_CONVERSION`. Converting to `BOOLEAN` treats numeric zero and the empty string as `FALSE` and anything else as `TRUE` — a conversion that must be asked for, which is what distinguishes it from the implicit truthiness the language does not have.
+
+`AS STRING` turns a number or a `BOOLEAN` into the text `PRINT` would write for it. It is how a number joins a string:
+
+```basic
+FUNCTION Start() AS VOID
+    LET count AS INTEGER = 3
+    LET ratio AS FLOAT = 1 / 4
+    LET done AS BOOLEAN = count > 2
+
+    PRINT "items: " + (count AS STRING)       // items: 3
+    PRINT "ratio: " + (ratio AS STRING)       // ratio: 0.25
+    PRINT "done: " + (done AS STRING)         // done: TRUE
+END FUNCTION
+```
+
+The conversion cannot fail. A float gets the shortest text that reads back as the same value, always with a decimal point (`2.0`), or `NAN`, `INF`, `-INF`. There is no width, precision, or locale: `AS STRING` converts, it does not format. It accepts only numbers and `BOOLEAN`; a `STRING`, `NULL`, or an alternative such as `INTEGER OR Error` is a `TYPE_MISMATCH`, so narrow the value first.
 
 A conversion in the middle of an expression is a signal worth reading. It usually means a value is being carried in a type that does not match its meaning, and the better fix is often to change the declaration rather than to add the cast.
 
