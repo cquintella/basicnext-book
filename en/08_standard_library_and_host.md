@@ -668,14 +668,12 @@ reply from 127.0.0.1 in <round-trip time> us
 ### Interpreter and compiler support
 
 Every example in this section runs under `bni run`. `bnc` compiles the
-`Args`, `Clock`, `Console`, `Exec`, TCP, and `Ping` examples, and
-`R.Random()` natively when `R.Seed` is called in the same function. In 0.6 it
-rejects the rest with `TARGET_UNSUPPORTED_OP` or `TARGET_UNSUPPORTED_HOST`:
-the `FS.File` methods (`FS.Open` itself compiles), `FS.Exists`,
-`FS.DeleteFile`, `HOST.NumProcs`, and several `HOST.Net` operations such as
-the `Address` predicates, `CIDR`, `TCPStream.SetTimeouts`, and
-`UDPSocket.LocalEndpoint`. When `bnc` refuses an operation, run the program
-with `bni` instead.
+`Args`, `Clock`, `Console`, `Exec`, `FileSystem`, TCP, UDP, and `Ping`
+examples, and `R.Random()` natively when `R.Seed` is called in the same
+function. In 0.6.2 it rejects the rest with `TARGET_UNSUPPORTED_HOST`:
+`HOST.NumProcs`, the `Address` predicates (`IsIPv4`, `IsLoopback`, …),
+`CIDR`, and `TCPStream.SetTimeouts`, `ShutdownRead`, and `ShutdownWrite`.
+When `bnc` refuses an operation, run the program with `bni` instead.
 
 ## External module references
 
