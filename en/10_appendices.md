@@ -46,6 +46,9 @@ External provider-backed modules are documented in separate appendices:
 - [`BNData`](14_bndata.md)
 - [External module conventions](15_external_modules.md)
 - [`BNDispatch`](16_bndispatch.md)
+- [`BNCrypto`](18_bncrypto.md)
+- [`BNSqlite`](19_bnsqlite.md)
+- [Debugging (`bni dap`)](20_debugging.md)
 
 ---
 

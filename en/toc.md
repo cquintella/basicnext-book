@@ -92,6 +92,8 @@
 - Appendix I: [External module conventions](15_external_modules.md)
 - Appendix J: [`BNDispatch`](16_bndispatch.md)
 - Appendix K: [`BNCrypto`](18_bncrypto.md)
+- Appendix L: [`BNSqlite`](19_bnsqlite.md)
+- Appendix M: [Debugging Basic Next (`bni dap`)](20_debugging.md)
 
 ---
 
