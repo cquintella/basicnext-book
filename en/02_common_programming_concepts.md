@@ -46,11 +46,14 @@ LET active AS BOOLEAN    // FALSE
 LET label AS STRING      // ""
 ```
 
-Alternative types are the exception: a binding whose type includes `OR` must be initialized, because there is no basis for choosing which alternative the default belongs to.
+Alternative types are the exception: a binding or field whose type includes `OR` must be initialized, so the value it starts with is always the one written in the program.
 
 ```basic
 LET answer AS STRING OR EOF = ""
+LET found AS INTEGER OR NULL = NULL
 ```
+
+Inside the toolchain, an alternative still has a default value, used only where the compiled program needs one without an initializer from the source: the default of its first member (`INTEGER OR NULL` starts as `0`), or the member itself when that first member is `NULL`, `NA`, or `EOF` (`NULL OR INTEGER` starts as `NULL`). This is the one place where the order of the members matters; for everything else, `INTEGER OR NULL` and `NULL OR INTEGER` are the same type.
 
 Omitting the type is never allowed. There is no inference for `LET`:
 
@@ -284,7 +287,7 @@ CONST LOW AS FLOAT32 = -16         // -16.0
 
 This applies to literals only. `LET ratio AS FLOAT = count` still needs `count AS FLOAT`, and so does any expression. The integer must be exactly representable in the declared type, so `LET x AS FLOAT32 = 16777217` is rejected: `FLOAT32` cannot hold that value without rounding. Assignments, arguments, and return values are unchanged and still require `AS`.
 
-Converting from floating-point to integer truncates the fractional part towards zero; it does not round. A value outside the target type's range raises `INVALID_NUMERIC_CONVERSION`. Converting to `BOOLEAN` treats numeric zero and the empty string as `FALSE` and anything else as `TRUE` — a conversion that must be asked for, which is what distinguishes it from the implicit truthiness the language does not have.
+Converting from floating-point to integer truncates the fractional part towards zero; it does not round. A value outside the target type's range raises `NUMERIC_OVERFLOW`, as an integer narrowing does; `NAN`, `INF` and `-INF` raise `INVALID_NUMERIC_CONVERSION`, since they have no integer value at all. Converting to `BOOLEAN` treats numeric zero, the empty string, `NULL`, `NA` and `EOF` as `FALSE` and anything else as `TRUE` — a conversion that must be asked for, which is what distinguishes it from the implicit truthiness the language does not have.
 
 `AS STRING` turns a number or a `BOOLEAN` into the text `PRINT` would write for it. It is how a number joins a string:
 
@@ -404,7 +407,7 @@ Replace a literal with a named constant as soon as it appears in a condition or 
 | `TYPE_MISMATCH` | Types differ without an explicit conversion; a `CONST` is used as an assignment target; an alternative-typed binding has no initializer. |
 | `E0001` | A `CONST` without a type is initialized by something other than a scalar literal. |
 | `NUMERIC_OVERFLOW` | An integer operation or conversion leaves the range of its type. |
-| `INVALID_NUMERIC_CONVERSION` | An `AS` conversion targets a type that cannot hold the value. |
+| `INVALID_NUMERIC_CONVERSION` | `NAN`, `INF` or `-INF` converted with `AS` to an integer type. |
 | `INDEX_OUT_OF_BOUNDS` | A string index is outside `0` through `LEN(s) - 1`. |
 
 ## Summary

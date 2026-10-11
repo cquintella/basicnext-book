@@ -2,9 +2,9 @@
 
 [Contents](toc.md)
 
-My name is Carlos Álvaro Quintella, and Basic Next is a language I started because of a problem I could describe precisely but could not solve by changing tools. Over a career spent in systems architecture, infrastructure, and teaching, I watched the distance grow between having an idea about a program and having the program. The distance is not made of algorithms. It is made of build configuration, framework conventions, implicit conversions that have to be remembered rather than read, and error messages that arrive at runtime, in production, about a decision made months earlier.
+> My name is Carlos Alvaro Quintella, and Basic Next our (mine and yours) programming language, I maily started this work because of a problem I could describe precisely but could not solve by changing tools. Over a career that I've spent in systems architecture, IT infrastructure, Information Security and teaching, along the years, I watched the distance grow between having an idea and having the program to run it. The distance is not made of algorithms. It is made of building, configurating, lerning frameworks, programming conventions and of course different language details, that I had to have it remembered rather than junst learned. not counting decrypting  error messages that didn't helped much solving the problem.
 
-This preface explains the reasoning that produced the language, states what it does and does not contain, and describes how the rest of the book is organized.
+With this preface I explains the reasoning that produced the language, states what it does and does what it doesn't do, and describes how the rest of the book is organized.
 
 ## The Problem the Language Addresses
 
@@ -32,15 +32,15 @@ These decisions have a common shape. Each one moves a class of error from runtim
 
 ## What Was Borrowed
 
-The syntax is deliberately familiar, and the sources are specific rather than sentimental.
+The syntax is deliberately familiar, and the sources are specific rather than personal.
 
-From BASIC comes the keyword vocabulary and the statement shapes — `LET`, `PRINT`, `FOR ... NEXT` rendered as `FOR ... END FOR` — which were designed at Dartmouth for students who were not specialists and which remain readable for the same reason (Kemeny and Kurtz, 1964). From Pascal comes the discipline of declaring before use and the structured-programming posture that a block has one entry and one exit (Wirth, 1971). From C comes the small core and the willingness to expose the machine: pointers, fixed-width integers, and a defined memory layout, but written without C's declarator syntax. From C++ comes the class model used for organizing state and behaviour, restricted to single inheritance with interfaces. From R comes the treatment of vectors as first-class values for numerical work.
+From BASIC comes the keyword vocabulary and the statement shapes — `LET`, `PRINT`, `FOR ... NEXT` rendered as `FOR ... END FOR` (I should have been NEXT, but END FOR is more coherent with the language). Basic were designed at Dartmouth for students who were not specialists and which remain readable for the same reason (Kemeny and Kurtz, 1964). From Pascal comes the discipline of declaring before use and the structured-programming posture that a block has one entry and one exit (Wirth, 1971). From C comes the small core and the willingness to expose the machine: pointers, fixed-width integers, and a defined memory layout, but written without C's declarator syntax. From C++ comes the class model used for organizing state and behaviour, restricted to single inheritance with interfaces. From R comes the treatment of vectors as first-class values for numerical work.
 
 Two omissions are equally deliberate. Implicit typing was not taken from Python, because a type that is inferred at the point of use is a type that must be reconstructed by every subsequent reader. The layered abstraction culture of enterprise Java was not taken either, because the ceremony required to express a small program in it is accidental difficulty by Brooks's definition.
 
 ## What the Language Does Not Have
 
-A language is defined as much by its exclusions, and stating them early is more useful than discovering them in chapter nine. As of version 0.5, Basic Next has no lambdas or closures, no generic classes, no `MATCH` or `ENUM` constructs, no variable-size collections in the core language, no string interpolation, no package registry, and no foreign function interface to C. Function values exist but are restricted to module-level functions and static methods. Compilation to native code and to WebAssembly covers a typed subset of the language, and a program outside that subset is rejected before emission with a diagnostic that names the reason rather than being compiled into something that behaves differently.
+A language is defined as much by its exclusions, and stating them early is more useful than discovering them in chapter nine. As of version 0.6, Basic Next has no lambdas or closures, no generic classes, no variable-size collections (yet) in the core language, no string interpolation, no package registry, and no foreign function interface to C (yet). Function values exist but are restricted to module-level functions and static methods. Compilation to native code and to WebAssembly covers a typed subset of the language, and a program outside that subset is rejected before emission with a diagnostic that names the reason rather than being compiled into something that behaves differently.
 
 Some of these are scheduled and some are decided against. The normative statement of scope is the language specification, not this book; where the two disagree, the specification governs.
 

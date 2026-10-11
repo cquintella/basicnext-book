@@ -22,7 +22,7 @@ By default, all fields and methods within a class are `PRIVATE`. Private members
 
 To make a member available to external code, you must explicitly mark it as `PUBLIC`.
 
-A third level, `PROTECTED` (0.5.2), makes a member visible to the declaring class and to classes that `EXTENDS` it — including subclasses in other modules — and to nothing else; reaching it from outside is `PROTECTED_ACCESS`.
+A third level, `PROTECTED`, makes a member visible to the declaring class and to classes that `EXTENDS` it — including subclasses in other modules — and to nothing else; reaching it from outside is `PROTECTED_ACCESS`.
 
 Inside a class method, you cannot access instance fields or methods using an unqualified name. You must always explicitly qualify instance access using the `SELF` keyword.
 
@@ -38,7 +38,7 @@ END CLASS
 
 ## Constructors and Destructors
 
-A class can define exactly one constructor to initialize its state. Overloading is not supported in version 0.3.
+A class can define exactly one constructor to initialize its state. Constructors cannot be overloaded.
 
 The constructor is declared as `FUNCTION CONSTRUCTOR` with an optional parameter list. It does not have a return type and is invoked automatically when `NEW` is called. If you do not declare a constructor, the compiler provides an implicit, parameterless `PRIVATE` constructor.
 
@@ -102,15 +102,55 @@ CLASS Dog EXTENDS Animal
 END CLASS
 ```
 
-Methods in the subclass automatically override methods in the base class with the same signature. Virtual dispatch ensures the correct method is called at runtime, even when the object is accessed through a base class reference (upcast).
+Methods in the subclass automatically override methods in the base class with the same signature. Virtual dispatch ensures the correct method is called at runtime, even when the object is accessed through a base class reference (upcast), across multi-level inheritance hierarchies.
 
 ```basic
-LET myDog AS Dog = NEW Dog()
-LET myAnimal AS Animal = myDog // Upcast
-myAnimal.Speak() // Prints "Woof"
+CLASS Animal
+    PUBLIC FUNCTION Speak() AS VOID
+        PRINT "..."
+    END FUNCTION
+END CLASS
+
+CLASS Mammal EXTENDS Animal
+    PUBLIC OVERRIDE FUNCTION Speak() AS VOID
+        PRINT "Mammal sound"
+    END FUNCTION
+END CLASS
+
+CLASS Dog EXTENDS Mammal
+    PUBLIC FUNCTION CONSTRUCTOR()
+        SUPER()
+    END FUNCTION
+
+    PUBLIC OVERRIDE FUNCTION Speak() AS VOID
+        PRINT "Woof"
+    END FUNCTION
+END CLASS
+
+LET dog AS Dog = NEW Dog()
+LET mammal AS Mammal = dog
+LET animal AS Animal = mammal
+
+dog.Speak()    // "Woof"
+mammal.Speak() // "Woof"
+animal.Speak() // "Woof"
 ```
 
-Since 0.5.2 a method that overrides an inherited one must carry `OVERRIDE`, written `PUBLIC OVERRIDE FUNCTION Speak() AS STRING`: `bni check` reports `OVERRIDE_REQUIRED` when the marker is missing and `OVERRIDE_WITHOUT_BASE` when no ancestor declares an overridable method. `STATIC` methods are not virtual. Narrowing a base-typed reference back to a subclass (`pet AS Dog` → `Dog OR Error`) is specified but not yet available.
+A subclass may also inherit an override provided by an intermediate class without overriding it again:
+
+```basic
+CLASS GoldenRetriever EXTENDS Dog
+    PUBLIC FUNCTION CONSTRUCTOR()
+        SUPER()
+    END FUNCTION
+END CLASS
+
+LET golden AS GoldenRetriever = NEW GoldenRetriever()
+LET a AS Animal = golden
+a.Speak() // Calls Dog.Speak: prints "Woof"
+```
+
+A method that overrides an inherited one must carry `OVERRIDE`, written `PUBLIC OVERRIDE FUNCTION Speak() AS STRING`: `bni check` reports `OVERRIDE_REQUIRED` when the marker is missing and `OVERRIDE_WITHOUT_BASE` when no ancestor declares an overridable method. `STATIC` methods are not virtual. Narrowing a base-typed reference back to a subclass (`pet AS Dog` → `Dog OR Error`) is specified but not yet available.
 
 ## Contracts (`INTERFACE` and `IMPLEMENTS`)
 
@@ -132,7 +172,18 @@ CLASS Report IMPLEMENTS Printable
 END CLASS
 ```
 
-An interface name acts as a type. A class reference can be assigned to a variable typed as an interface it implements. This implicit upcast preserves the object reference but restricts access to only the interface's members. In version 0.3, you cannot downcast an interface value back to a concrete class.
+An interface name acts as a type. A class reference can be assigned to a variable typed as an interface it implements. This implicit upcast preserves the object reference but restricts access to only the interface's members. Narrowing an interface value back to a concrete class is not available.
+
+The same upcast applies to each element of a vector literal written where a vector type is declared. Here `Report` and `Invoice` both implement `Printable`, so the literal is a `Printable[2]`:
+
+```basic
+LET documents AS Printable[2] = [NEW Report(), NEW Invoice()]
+FOR i AS INT32 = 0 TO 1
+    documents[i].Print()
+END FOR
+```
+
+Each element is checked against the declared element type, so an element of an unrelated class is a `TYPE_MISMATCH` that names it. A literal without a declared type, such as the argument of `LEN`, takes the type of its first element instead.
 
 ---
 

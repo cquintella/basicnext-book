@@ -48,8 +48,11 @@
 ## 5. [Functions and Program Structure](05_functions_and_program_structure.md)
 - Function Declarations and Return Analysis
 - Function Values
-- Modules, Namespaces, and the `BN` Root
-- Visibility (`EXPORT`, `IMPORT`)
+- Modules: programs in several files
+- What crosses the boundary (`EXPORT`)
+- Writing an `IMPORT` (paths, aliases, letter case, qualified imports)
+- The module search path (`--module-path`, `config.toml`, `BN_HOME`)
+- Cycles and diagnostics
 
 ## 6. [Object-Oriented Features](06_object_oriented_features.md)
 - Reference Types (`CLASS`)
@@ -59,13 +62,13 @@
 - Contracts (`INTERFACE` and `IMPLEMENTS`)
 
 ## 7. [Memory Management](07_memory_management.md)
-- Memory Management (ARC, `RELEASE`, pointers)
+- Memory Management (ARC, when objects are released, constant parameters, `RELEASE`, pointers)
 - Pointers (`POINTER TO TYPE`, array pointers)
 - Memory Safety and Runtime Errors
 
 ## 8. [Standard Library and HOST](08_standard_library_and_host.md)
 - The external module boundary
-- HOST capabilities (`HOST.Args`, `HOST.Clock`, `HOST.Console`, `HOST.Random`, `HOST.FileSystem`, `HOST.Exec`)
+- HOST capabilities (`HOST.Args`, `HOST.Clock`, `HOST.Console`, `HOST.Random`, `HOST.FileSystem`, `HOST.Exec`, `HOST.Env`)
 - Temporal Data (`TIMESTAMP`, `DATE`, `TIME`, `TIMEZONE`)
 - Built-ins (`LEN`, `SIZEOF`)
 

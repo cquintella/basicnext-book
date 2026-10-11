@@ -78,13 +78,14 @@ narrowed to `T`.
 | `HOST.Random` | `IMPORT HOST.Random AS R` | reproducible pseudorandom numbers |
 | `HOST.FileSystem` | `IMPORT HOST.FileSystem AS FS` | reading and writing files |
 | `HOST.Exec` | `IMPORT HOST.Exec AS Exec` | running another program |
+| `HOST.Env` | `IMPORT HOST.Env AS Env` | reading environment variables |
 | `HOST.Net` | `IMPORT HOST.Net AS Net` | addresses, name resolution, TCP, UDP, ping |
 
 The normative contracts are in the language specification:
 [`host.md`](https://github.com/cquintella/BasicNext/blob/main/language/0.6/host.md),
 [`console.md`](https://github.com/cquintella/BasicNext/blob/main/language/0.6/console.md),
 [`host-exec.md`](https://github.com/cquintella/BasicNext/blob/main/language/0.6/host-exec.md), and
-[`host-net.md`](https://github.com/cquintella/BasicNext/blob/main/language/0.6/host-net.md).
+[`host-net.md`](https://github.com/cquintella/BasicNext/blob/main/language/0.6/host-net.md), and\n[`host-env.md`](https://github.com/cquintella/BasicNext/blob/main/language/0.6/host-env.md).
 
 ### `HOST.Args`
 
@@ -440,6 +441,31 @@ argument list as a vector; a function of your own cannot take a
 variable-length vector, so build a fixed-size one where you call `Run`.
 Restricted execution policies deny `HOST.Exec` entirely.
 
+### `HOST.Env`
+
+`Env.Get(name)` and `Env.Has(name)` read environment variables of the running
+process. The surface is strictly read-only: no modifying or removing variables
+and no enumeration is provided.
+
+```basic
+IMPORT HOST.Env AS Env
+
+FUNCTION Start() AS VOID
+    IF Env.Has("USER") THEN
+        LET username AS STRING OR Error = Env.Get("USER")
+        IF username IS STRING THEN
+            PRINT "Current user:", username
+        END IF
+    END IF
+END FUNCTION
+```
+
+`Get` returns an `Error` with `Code = Env.NOT_SET` if the variable does not
+exist. If the variable name is empty, contains `=`, or contains NUL bytes,
+`Env.INVALID_NAME` is returned. If the environment variable contains invalid
+UTF-8 bytes, `Env.INVALID_UTF8` is returned. If restricted by policy
+(`BN_ENV_POLICY=deny`), `Env.POLICY_DENIED` is returned.
+
 ### `HOST.Net`
 
 Networking is typed: an `Address` is parsed and validated before it can be
@@ -497,7 +523,7 @@ END FUNCTION
 127.0.0.1 loopback: TRUE private: FALSE
 192.168.10.7 loopback: FALSE private: TRUE
 ::1 loopback: TRUE private: FALSE
-example.com is not an address: invalid IP address
+example.com is not an address: cannot parse "example.com" as an IP address
 prefix: 24 contains 192.168.10.7: TRUE
 localhost -> ::1
 localhost -> 127.0.0.1
@@ -505,6 +531,12 @@ localhost -> 127.0.0.1
 
 `Resolve` returns an `Addresses` collection in the system's order, read with
 `Count()` and `Get(i)`.
+
+`CIDR.Parse` is as strict as `Address.Parse`. The prefix is plain decimal
+(`/8`, not `/08` or `/+8`), and the address must be the network address:
+`10.0.0.1/8` is an `Error` whose cause says to write `10.0.0.0/8`. A typo
+in an ACL or an egress list therefore fails at once instead of silently
+naming a different network.
 
 **TCP.** `Net.TCPListen` opens listeners on a set of endpoints, `Accept` waits
 for a connection, and `Net.TCPConnect` connects. `Read` and `Write` move bytes

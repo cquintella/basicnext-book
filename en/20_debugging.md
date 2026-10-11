@@ -225,11 +225,68 @@ While `bni dap` covers 95% of everyday development and unit testing, compiled na
 
 * **Current Status:** Binaries compiled with `bnc -o <output>` link directly against the native runtime library (`bn_rt`) and are executable system binaries (Mach-O, ELF, or Windows PE).
 * **Native Tooling:** Because they are native executables, external performance and diagnostics tools—including **Instruments** (macOS), **perf** (Linux), **Valgrind**, and **AddressSanitizer**—can analyze execution traces and memory profiles directly.
-* **Native Debuggers (LLDB / GDB):** Full source-level line-stepping for compiled binaries requires DWARF debug symbols (`-g`), allowing LLDB or GDB to map CPU instruction addresses back to `.bn` source line spans. DWARF generation is scheduled in the toolchain roadmap (`todo/bucket-typed-llvm-emitter.md`).
+* **Native Debuggers:** `bnc -g` adds source-level debug information: one entry per function, with the Basic Next name, and a line and column for every instruction. On Linux and macOS it is DWARF (on macOS, `clang` also writes a `.dSYM` bundle next to the executable); on Windows the linker writes a PDB. A debugger can then stop at a line of a `.bn` file:
+
+  ```sh
+  $ bnc -g --opt none app.bn -o app
+  $ lldb ./app
+  (lldb) breakpoint set -f app.bn -l 12
+  (lldb) run
+  ```
+
+  Use `--opt none` while debugging: with optimization, the code of a line can be folded away or moved, and a breakpoint on it may never stop. Without `-g`, the executable carries no Basic Next debug information.
 
 ---
 
-## 7. Best Practices for Debugging
+## 7. Inspecting Reference Counts (ARC)
+
+Both toolchains count references in the same ARC core of the runtime (Chapter 7), so every view below shows the same objects and counts for `bni` and for a `bnc` executable.
+
+* **Variables panel (`bni dap`):** an object shows its class, its id, and its strong count, for example `Tag#0 (strong 2)`. Expanding it lists its fields and an `[arc]` entry with the id, the strong count, and the generation of its slot. A weak binding shows `→ Tag#0 (alive)` while its object lives and `→ dead (NULL)` after.
+* **ARC scope (`bni dap`):** next to **Locals**, the **ARC** scope lists every live object, one line each (`#0  Tag (strong 2)`).
+* **Debug console (`bni dap`):** `:arc` lists the live objects; `:arc <variable>` shows the record of the object a variable holds.
+* **Trace (both toolchains):** with `BN_ARC_TRACE=1`, every retain, release, and destruction is written to standard error with its source line and column. For this program:
+
+  ```basic
+  FUNCTION Start() AS VOID
+      LET a AS Tag = NEW Tag("a")
+      LET b AS Tag = a
+      a = NEW Tag("c")
+      PRINT b.name, a.name
+  END FUNCTION
+  ```
+
+  the trace is (lines 10 to 13 of the file, after the `Tag` class):
+
+  ```text
+  arc new Tag#0 strong=1 at 10:20
+  arc retain Tag#0 strong=2 at 11:5
+  arc new Tag#1 strong=1 at 12:9
+  arc release Tag#0 strong=1 at 12:5
+  arc release Tag#0 strong=0 at 11:5
+  arc destroy Tag#0 strong=0 at 11:5
+  arc release Tag#1 strong=0 at 10:5
+  arc destroy Tag#1 strong=0 at 10:5
+  ```
+
+  `b` is released before `a` at the end of `Start`: locals go in reverse declaration order. Standard output is unchanged, so a trace never mixes with the program's own output.
+* **Native debuggers (`bnc -g`):** the runtime exports two functions a debugger can call. `bn_rt_arc_dump()` prints the live objects to standard error, and `bn_rt_arc_info(id)` prints one:
+
+  ```sh
+  $ bnc -g --opt none app.bn -o app
+  $ lldb ./app
+  (lldb) breakpoint set -n bn_rt_arc_release
+  (lldb) run
+  (lldb) expr (void)bn_rt_arc_dump()
+  arc: 1 live object(s)
+    Tag#0 strong=1
+  ```
+
+  With `gdb`, the same call is `call (void)bn_rt_arc_dump()`.
+
+---
+
+## 8. Best Practices for Debugging
 
 * **Leverage Checked Conversions:** Basic Next arithmetic is checked against overflow by default. When an unexpected numeric trap occurs during execution, set a breakpoint prior to the calculation and inspect variable values using the Variables panel.
 * **Inspect Alternative Types:** For functions returning `T OR Error`, step immediately after the call and observe the narrowed type in the debugger scope before and after `IF result IS Error`.
