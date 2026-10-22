@@ -700,11 +700,11 @@ reply from 127.0.0.1 in <round-trip time> us
 ### Interpreter and compiler support
 
 Every example in this section runs under `bni run`. `bnc` compiles the
-`Args`, `Clock`, `Console`, `Exec`, `FileSystem`, TCP, UDP, and `Ping`
-examples, and `R.Random()` natively when `R.Seed` is called in the same
-function. In 0.6.2 it rejects the rest with `TARGET_UNSUPPORTED_HOST`:
-`HOST.NumProcs`, the `Address` predicates (`IsIPv4`, `IsLoopback`, …),
-`CIDR`, and `TCPStream.SetTimeouts`, `ShutdownRead`, and `ShutdownWrite`.
+`Args`, `Clock`, `NumProcs`, `Console`, `Exec`, `FileSystem`, `Env`, TCP, UDP,
+`CIDR`, and `Ping` examples, and `R.Random()` natively when `R.Seed` is called in the same
+function. `bnc` rejects the remaining network methods with `TARGET_UNSUPPORTED_HOST`:
+the `Address` predicates (`IsIPv4`, `IsLoopback`, …) and `TCPStream.SetTimeouts`,
+`ShutdownRead`, and `ShutdownWrite`.
 When `bnc` refuses an operation, run the program with `bni` instead.
 
 ## External module references

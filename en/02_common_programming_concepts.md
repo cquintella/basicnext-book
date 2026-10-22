@@ -32,6 +32,8 @@ LET counter AS INTEGER = 10
 LET name AS STRING = "Alice"
 ```
 
+`AS INTEGER` e `AS STRING` are type annotations, the object is to define the type of te variable asserting they will always contain the right type of data, assign a different type of data will gerate error, and if this was really what was desired we have a special way to convert values using typecating, that we will see later.
+
 Several names of the same type may be declared in one statement, each with its own initializer:
 
 ```basic
@@ -45,29 +47,42 @@ LET score AS INTEGER     // 0
 LET active AS BOOLEAN    // FALSE
 LET label AS STRING      // ""
 ```
-
-Alternative types are the exception: a binding or field whose type includes `OR` must be initialized, so the value it starts with is always the one written in the program.
+When a variable assignment can generate different types of data, due to incertainty o nondeterministic behavior of the program when cause alternative types, that are the exception to a binding or field, that we can use with a `OR` declaration.
 
 ```basic
 LET answer AS STRING OR EOF = ""
 LET found AS INTEGER OR NULL = NULL
 ```
 
+
 Inside the toolchain, an alternative still has a default value, used only where the compiled program needs one without an initializer from the source: the default of its first member (`INTEGER OR NULL` starts as `0`), or the member itself when that first member is `NULL`, `NA`, or `EOF` (`NULL OR INTEGER` starts as `NULL`). This is the one place where the order of the members matters; for everything else, `INTEGER OR NULL` and `NULL OR INTEGER` are the same type.
 
-Omitting the type is never allowed. There is no inference for `LET`:
+Omitting the type is not allowed for an ordinary binding. There is no inference for `LET`:
 
 ```basic
 LET message = "Hello"
 ```
 
 ```
-error[E0100]: Syntax error: a binding declaration requires AS TYPE
+error[E0101]: Syntax error: a binding declaration requires AS TYPE.
 ```
 
 The reason for the rule is that a reader of a declaration should not have to evaluate the initializer, or trace a chain of function calls, to know what the binding holds. Writing the type also makes the declaration the place where a wrong assumption is caught, rather than the first arithmetic operation that depends on it.
 
+A destructuring `LET` is the exception. The names sit in brackets, and a name written without `AS` takes the type of the value it receives. That form splits a vector or a `STRUCT` into bindings; it is introduced with those types in [Compound Data](04_compound_data.md).
+
 Names are worth spending thought on at this point, because Basic Next gives no way to recover meaning that a name fails to carry. Prefer a name that states what the value is in the problem being solved — `remainingAttempts`, `unitPrice`, `isEligible` — over one that describes its representation or its position in a loop. A name whose meaning requires a comment to explain is a name that has not been chosen yet.
+
+### Identifier Naming and Reserved Words
+
+Variable and constant names are identifiers. An identifier begins with an ASCII letter or an underscore (`_`), followed by any combination of ASCII letters, digits, or underscores. Identifiers are case-sensitive: `totalScore` and `TotalScore` are distinct bindings.
+
+Basic Next strictly forbids using any variation of a reserved word as an identifier, regardless of case. Because words like `FOR`, `IF`, `WHILE`, `LET`, and `STRING` are reserved by the language, spellings such as `for`, `For`, `while`, `let`, or `string` cannot be used as variable or constant names. Doing so produces the compile-time error `RESERVED_IDENTIFIER`:
+
+```basic
+LET for AS INTEGER = 0       // Rejected: RESERVED_IDENTIFIER
+LET string AS STRING = "ok"  // Rejected: RESERVED_IDENTIFIER
+```
 
 ## Constants
 
@@ -261,7 +276,7 @@ When a compound condition is long enough that its grouping is not obvious at a g
 Basic Next performs no implicit conversion, including between numeric types that would lose nothing. Assigning an `INTEGER` to a `FLOAT` binding is an error:
 
 ```
-error[TYPE_MISMATCH]: Expected FLOAT(FLOAT64), but found INTEGER(INT32) in binding initializer.
+error[TYPE_MISMATCH]: Expected FLOAT64, but found INT32 in binding initializer.
 ```
 
 The `AS` operator states the conversion:

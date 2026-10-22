@@ -4,12 +4,11 @@
 
 Because Basic Next specifies behavior transparently, the exact language specifications and technical lists are maintained in their respective normative files within the repository.
 
-## Appendix A: Keywords Reference
+## Appendix A: Keywords
 
-Basic Next maintains a strict registry of reserved words to guarantee backward compatibility. A word is only reserved in its exact uppercase spelling.
+The reading manual is [Appendix A](21_keywords.md). A pair the grammar writes together, such as `END FUNCTION` or `END FOR`, is one entry.
 
-For the complete list of keywords, their semantic meanings, and decision statuses, see the normative document:
-- [0.3 Keyword Registry](../../../language/0.3/keywords.md)
+Keywords in a program are written in uppercase (`FOR`, `IF`, `WHILE`). Any other ASCII spelling of those letters (`for`, `For`, `fOR`) is a reserved identifier and cannot name a binding, a type, or a member. The normative registry is [`keywords.md`](../../../language/0.6/keywords.md).
 
 ## Appendix B: Language Diagnostics
 
@@ -18,22 +17,23 @@ Basic Next is designed with a zero-warning policy. Diagnostics either reject the
 Diagnostic behavior follows the accepted language contract and command
 reference:
 
-- [0.6 language specification](../../../language/0.6/0.6.md)
-- [`bn(1)`](../../man/bn.1)
+* [0.6 language specification](../../../language/0.6/0.6.md)
+* [`bni(1)`](../../man/bni.1) and [`bnc(1)`](../../man/bnc.1)
 
 ## Appendix C: Accepted Syntax (EBNF)
 
 The structural grammar of Basic Next is strictly defined using Extended Backus-Naur Form (EBNF). The EBNF focuses exclusively on parsing valid syntax, while semantic rules (such as return analysis) are enforced by the compiler.
 
-The normative grammar for the current 0.5 line is:
+The normative grammar for the 0.6 line is:
 
-- [`0.6.ebnf`](../../../language/0.6/0.6.ebnf) — grammar
-- [`0.6.md`](../../../language/0.6/0.6.md) — semantics
-- [`keywords.md`](../../../language/0.6/keywords.md) — reserved words
+* [`0.6.ebnf`](../../../language/0.6/0.6.ebnf) — grammar
+* [`0.6.md`](../../../language/0.6/0.6.md) — semantics
+* [`keywords.md`](../../../language/0.6/keywords.md) — reserved words
 
-## Appendix D: The `bn` Tool
+## Appendix D: `bni` and `bnc`
 
-The Unix manual for the reference tool is [`bn(1)`](../../man/bn.1).
+`bni` interprets and checks a program. `bnc` compiles it to a native binary.
+Their manuals are [`bni(1)`](../../man/bni.1) and [`bnc(1)`](../../man/bnc.1).
 Installation and troubleshooting are in
 [`docs/project/usage.md`](../../project/usage.md). The normative language text
 is [`0.6.md`](../../../language/0.6/0.6.md).

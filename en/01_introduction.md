@@ -19,9 +19,9 @@ Basic Next is built around a small, disciplined set of core design choices:
 
 * **Explicit Typing:** Every variable, function parameter, class field, and return type must be written out. The compiler never relies on implicit type coercion or silent fallback conversions.
 * **Readable Block Structure:** Code blocks open with a specific keyword and close with an explicit matching `END` statement (`END IF`, `END WHILE`, `END FUNCTION`, `END CLASS`). Code structure does not depend on braces `{}` or indentation rules.
-* **Keywords in UPPERCASE:** All language keywords and built-in primitive types are written in uppercase (`LET`, `IF`, `FOR`, `INTEGER`, `STRING`). Identifiers (variables, functions, classes) are case-sensitive and typically use PascalCase or camelCase. This creates a clear visual distinction between language syntax and user-defined logic.
+* **Keywords in UPPERCASE:** All language keywords and built-in primitive types are written in uppercase (`LET`, `IF`, `FOR`, `INTEGER`, `STRING`). Identifiers (variables, functions, classes) are case-sensitive and typically use PascalCase or camelCase. To eliminate ambiguity, all case variations of reserved words (such as `for`, `For`, `while`, `let`) are reserved identifiers and cannot be used as user-defined names. This creates a clear visual distinction between language syntax and user-defined logic.
 * **Unified Pipeline:** A single frontend parses source files, performs semantic analysis, and lowers code to a validated intermediate representation (BN IR).
-* **Reference Interpreter and Native Compiler:** The same validated BN IR can be executed immediately by the reference interpreter (`bni`) or compiled ahead-of-time into native machine code or WebAssembly (`bnc`).
+* **Reference Interpreter and Native Compiler:** The same validated BN IR can be executed immediately by the reference interpreter (`bni`) or compiled ahead-of-time into native machine code (`bnc`).
 * **Automatic Reference Counting (ARC):** Class instances and dynamic reference types are managed automatically through strong and weak references without a garbage collection pause.
 * **Minimal Built-in Core:** The language runtime provides only `HOST` as a built-in interface for low-level operating system facilities. Extended features are modularized into standard libraries whose module names begin with `BN` (`BNMath`, `BNJson`, `BNData`, `BNSqlite`, `BNWeb`, `BNLog`, `BNCrypto`, `BNDispatch`).
 
@@ -34,7 +34,11 @@ Basic Next reserves uppercase words for language grammar and primitive types:
 * Keywords: `FUNCTION`, `LET`, `CONST`, `IF`, `THEN`, `ELSE`, `WHILE`, `FOR`, `RETURN`, `IMPORT`, `EXPORT`.
 * Primitive Types: `INTEGER`, `FLOAT`, `BOOLEAN`, `STRING`, `VOID`, `BYTE`, `INT16`, `INT32`, `INT64`, `FLOAT32`, `FLOAT64`.
 
-Identifiers created by the programmer are case-sensitive:
+Writing keywords in lowercase (such as `let` or `if`) results in a syntax error. Official editor plugins provide automatic capitalization as you type to make this effortless.
+
+### Reserved Identifiers and Case Prohibition
+
+Identifiers created by the programmer (variables, constants, functions, classes, structs, interfaces, fields) are case-sensitive:
 
 ```basic
 LET counter AS INTEGER = 10
@@ -42,7 +46,7 @@ LET Counter AS INTEGER = 20
 PRINT counter, Counter    // Prints: 10 20
 ```
 
-Writing keywords in lowercase (such as `let` or `if`) results in a syntax error. Official editor plugins provide automatic capitalization as you type to make this effortless.
+To eliminate ambiguity and prevent naming collisions, all spellings of any reserved word under ASCII case-insensitive comparison (such as `for`, `For`, `fOR`, `while`, `let`, `string`) are **reserved identifiers**. They cannot be user-defined names. The specified diagnostic is `RESERVED_IDENTIFIER`. [Appendix A](21_keywords.md) shows what `bni check` reports when the uppercase keyword itself stands where a name belongs.
 
 ### Explicit Blocks
 
@@ -87,7 +91,7 @@ General-purpose libraries live in the standard module path under `modules/bn/` a
 * `BNData`: Tabular data frames, CSV parsing, and vector manipulation.
 * `BNSqlite`: Embedded SQLite database querying and transactional operations.
 * `BNWeb`: HTTP client and server abstractions, URI helpers, and routing.
-* `BNLog`: Structured application logging with severity levels and targets.
+* `BNLog`: Structured application and access logging, with severity levels, formats (JSON, syslog, Apache) and destinations.
 * `BNCrypto`: Cryptographic hashing (SHA-256, SHA-512) and utility functions.
 * `BNDispatch`: Concurrency workers and task queues.
 * `BNString`: Extended Unicode string manipulations.
@@ -115,7 +119,7 @@ Basic Next provides two complementary tools built on the same compiler frontend:
       ▼
 [ Validated BN IR ]
       ├──► bni (Reference Interpreter / LSP / DAP)
-      └──► bnc (LLVM Compiler ──► Native Binary / Wasm)
+      └──► bnc (LLVM Compiler ──► Native Binary)
 ```
 
 ### Interpretation (`bni`)
@@ -125,7 +129,7 @@ Basic Next provides two complementary tools built on the same compiler frontend:
 * Powers developer tooling, including `bni check`, `bni lsp` (Language Server Protocol), and `bni dap` (Debug Adapter Protocol).
 
 ### Ahead-of-Time Compilation (`bnc`)
-* `bnc` compiles the validated BN IR through LLVM into an optimized native executable or WebAssembly (`wasm32`) module.
+* `bnc` compiles the validated BN IR through LLVM into an optimized native executable.
 * Generates standalone machine code artifacts with zero interpreter runtime overhead.
 * Guarantees semantic parity: if a feature cannot be faithfully represented on the target platform, `bnc` rejects it with a support error rather than emitting code that behaves differently from `bni`.
 
@@ -164,7 +168,7 @@ bnc 0.6.4
 | --- | --- |
 | `bni check <file.bn>` | Runs lexer, parser, and semantic type analysis without executing code. |
 | `bni run <file.bn> [-- args]` | Validates IR and executes the `Start` entry point in the interpreter. |
-| `bnc <file.bn> [-o output]` | Compiles the validated IR into a native binary or WebAssembly module. |
+| `bnc <file.bn> [-o output]` | Compiles the validated IR into a native binary. |
 | `bni eval '<source>'` | Directly evaluates a Basic Next expression or short snippet. |
 | `bni lex <file.bn>` | Dumps tokens produced by the lexer (useful for debugging syntax errors). |
 | `bni lsp` | Starts the Language Server Protocol daemon on standard I/O. |
@@ -265,7 +269,7 @@ By default the binary runs on any processor of the same architecture. `--cpu nat
 $ bnc --cpu native hello.bn -o hello
 ```
 
-Such a binary may not start on another processor, so keep the default for anything you distribute. The output does not change: `--cpu native` never alters a result, and floating-point arithmetic stays exactly as `bni` computes it. `--cpu native` is rejected with `--target wasm32`.
+Such a binary may not start on another processor, so keep the default for anything you distribute. The output does not change: `--cpu native` never alters a result, and floating-point arithmetic stays exactly as `bni` computes it.
 
 ### Understanding the Structure
 * `FUNCTION Start() AS VOID`: Every executable program requires a parameterless entry point named `Start`. It must return either `VOID` (exiting with status code 0) or `INTEGER` (providing a custom exit code between 0 and 255).
@@ -316,7 +320,7 @@ END FUNCTION
 Running `bni check program.bn` reports:
 
 ```
-error[TYPE_MISMATCH]: Type mismatch: Expected FLOAT(FLOAT64), but found INTEGER(INT32) in binding initializer.
+error[TYPE_MISMATCH]: Type mismatch: Expected FLOAT64, but found INT32 in binding initializer.
  --> program.bn:3:22
   |
   3 |     LET b AS FLOAT = a

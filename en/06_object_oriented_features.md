@@ -183,7 +183,7 @@ FOR i AS INT32 = 0 TO 1
 END FOR
 ```
 
-Each element is checked against the declared element type, so an element of an unrelated class is a `TYPE_MISMATCH` that names it. A literal without a declared type, such as the argument of `LEN`, takes the type of its first element instead.
+Each element is checked against the declared element type, so an element of an unrelated class is a `TYPE_MISMATCH` that names it. A literal without a declared type, such as the argument of `LEN`, takes the type of its first element instead, and every other element must be assignable to it: `LEN([1, 2.5])` is a `TYPE_MISMATCH` naming `2.5`, while `LEN([1.0, 2.5])` is a `FLOAT` vector.
 
 ---
 

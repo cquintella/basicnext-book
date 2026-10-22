@@ -10,7 +10,7 @@
 - What Basic Next is, and who it is for
 - Design principles
 - Installing the toolchain
-- The `bn` commands (`check`, `run`, `build`, `eval`, `lex`, `lsp`, `dap`)
+- The `bni` commands (`check`, `run`, `eval`, `lex`, `lsp`, `dap`) and `bnc`
 - A first program, interpreted and compiled
 - Modules and the entry point (`Start`, `EXPORT`, `IMPORT`, `STATIC` state)
 - Reading a diagnostic
@@ -41,6 +41,7 @@
 ## 4. [Compound Data and Error Handling](04_compound_data.md)
 - Fixed-Size Vectors
 - Value Types (`STRUCT`)
+- Destructuring a vector or a `STRUCT`
 - String Indexing
 - Alternative Types and Absence (`OR`, `IS`, `NULL`, `NA`, `EOF`)
 - Error Values (The `Error` object)
@@ -84,10 +85,10 @@
 - Sandboxed path handling and policy precedence
 
 ## [Appendices](10_appendices.md)
-- Appendix A: Keywords Reference
+- Appendix A: [Keywords](21_keywords.md)
 - Appendix B: Language Diagnostics
 - Appendix C: Accepted Syntax — see the normative [0.6 EBNF](../../../language/0.6/0.6.ebnf)
-- Appendix D: The `bn` Tool (`bn(1)`)
+- Appendix D: `bni` and `bnc`
 - Appendix E: [`BNJson`](11_bnjson.md)
 - Appendix F: [`BNLog`](12_bnlog.md)
 - Appendix G: [`BNWeb`](13_bnweb.md)

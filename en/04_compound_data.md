@@ -48,6 +48,62 @@ moved.X = 10.0
 
 Like vectors, structs have value semantics. Assignment or parameter passing creates a complete copy of the field values. Changing `moved.X` in the example above does not affect `origin.X`. Structs have value semantics; class-style `NEW` and `RELEASE` are not used to manage them.
 
+## Destructuring a vector or a `STRUCT`
+
+One `LET` can declare several bindings from a single vector or a single `STRUCT`. The source is evaluated once, and the new names are not in scope inside it.
+
+```basic
+LET point AS INTEGER[2] = [3, 4]
+LET [x AS INTEGER, y] = point
+PRINT x, y
+LET grid AS INTEGER[2][3] = [[1, 2, 3], [4, 5, 6]]
+LET [top, bottom] = grid
+PRINT top[0], bottom[2]
+```
+
+`x` is declared `INTEGER`. `y` omits `AS` and takes the type of `point[1]`, which is also `INTEGER`. For a vector of more than one dimension, each binding receives a row: `top` and `bottom` are `INTEGER[3]`. A name written with `AS` must be a type the value can be assigned to.
+
+The number of bindings must equal the length of the first dimension. A fixed vector of another length is rejected when the program is checked:
+
+```basic
+LET [a] = point
+```
+
+```
+error[TYPE_MISMATCH]: Type mismatch: Expected vector of length 2, but found 1 bindings in destructuring LET.
+```
+
+When the length is known only at run time, a different count stops the program with `INDEX_OUT_OF_BOUNDS`.
+
+A `STRUCT` is split by field name, in any order, and a subset of the fields is enough. The binding's name is the field's name. There is no renaming.
+
+```basic
+STRUCT Site
+    port AS INTEGER = 80
+    name AS STRING
+END STRUCT
+
+LET site AS Site = [10, "web"]
+LET [name, port] = site
+PRINT name, port
+```
+
+`[10, "web"]` fills `Site` by declaration order: the first element is `port`, the second is `name`. The same bracket literal is accepted wherever a `STRUCT` type is declared — a `LET` initializer, a field initializer, an argument, a `RETURN`, or an assignment. It needs one element for every field. A shorter literal is a `TYPE_MISMATCH`; a field's default does not fill the gap. Reordering the fields changes what the literal means. Destructuring, which uses the names, does not.
+
+A bracket literal never makes an object. Objects are made by `NEW` and their constructor, and they are read field by field. An object, a `STRING`, or a scalar used as the source of a destructuring `LET` is a `TYPE_MISMATCH`.
+
+Destructuring exists only in `LET`. The same brackets on the left of an ordinary assignment are a syntax error:
+
+```basic
+[x, y] = point
+```
+
+```
+error[E0101]: Syntax error: an assignment target must be an identifier, member, or index.
+```
+
+A repeated name, or a name already declared in the function, is `DUPLICATE_NAME`.
+
 ## String Indexing
 
 Strings in Basic Next are UTF-8 encoded, and their contents can be read using zero-based indexing to access individual Unicode scalars (characters).

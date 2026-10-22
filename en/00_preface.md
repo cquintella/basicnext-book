@@ -40,7 +40,7 @@ Two omissions are equally deliberate. Implicit typing was not taken from Python,
 
 ## What the Language Does Not Have
 
-A language is defined as much by its exclusions, and stating them early is more useful than discovering them in chapter nine. As of version 0.6, Basic Next has no lambdas or closures, no generic classes, no variable-size collections (yet) in the core language, no string interpolation, no package registry, and no foreign function interface to C (yet). Function values exist but are restricted to module-level functions and static methods. Compilation to native code and to WebAssembly covers a typed subset of the language, and a program outside that subset is rejected before emission with a diagnostic that names the reason rather than being compiled into something that behaves differently.
+A language is defined as much by its exclusions, and stating them early is more useful than discovering them in chapter nine. As of version 0.6, Basic Next has no lambdas or closures, no generic classes, no variable-size collections (yet) in the core language, no string interpolation, no package registry, and no foreign function interface to C (yet). Function values exist but are restricted to module-level functions and static methods. Compilation to native code covers a typed subset of the language, and a program outside that subset is rejected before emission with a diagnostic that names the reason rather than being compiled into something that behaves differently.
 
 Some of these are scheduled and some are decided against. The normative statement of scope is the language specification, not this book; where the two disagree, the specification governs.
 

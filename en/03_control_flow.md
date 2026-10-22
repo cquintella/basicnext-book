@@ -27,7 +27,7 @@ END IF
 ```
 
 ```
-error[TYPE_MISMATCH]: Type mismatch: Expected BOOLEAN, but found INTEGER(INT32) in condition.
+error[TYPE_MISMATCH]: Type mismatch: Expected BOOLEAN, but found INT32 in condition.
 ```
 
 The comparison must be stated explicitly:
