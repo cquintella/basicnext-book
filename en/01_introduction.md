@@ -25,6 +25,69 @@ Basic Next is built around a small, disciplined set of core design choices:
 * **Automatic Reference Counting (ARC):** Class instances and dynamic reference types are managed automatically through strong and weak references without a garbage collection pause.
 * **Minimal Built-in Core:** The language runtime provides only `HOST` as a built-in interface for low-level operating system facilities. Extended features are modularized into standard libraries whose module names begin with `BN` (`BNMath`, `BNJson`, `BNData`, `BNSqlite`, `BNWeb`, `BNLog`, `BNCrypto`, `BNDispatch`).
 
+## Extensive Language Classification
+
+Basic Next occupies a distinct, intentional position in modern programming language taxonomy:
+
+### Generation
+
+* **Third-Generation Language (Modernized 3GL):** Basic Next evolves the classic structured language lineage into the contemporary era. It couples human-readable syntax with modern Intermediate Representation (BN IR), strict compile-time semantic analysis, and native machine code generation via LLVM.
+
+### Paradigms
+
+* **Structured and Procedural:** Modular subroutines (`FUNCTION`, `SUB`), deterministic control flow without unconditional unstructured jumps (`GOTO` does not exist), and lexical scoping.
+* **Object-Oriented:** First-class classes (`CLASS`), single inheritance (`EXTENDS`), polymorphic interfaces (`INTERFACE`), explicit member visibility (`PUBLIC`, `PRIVATE`), instance methods, and deterministic lifecycle destructors (`DESTRUCTOR`).
+* **Contract-Driven and Explicit:** Design principles prioritize explicit assertions and declarations over implicit compiler deductions or magic syntax.
+
+### Type System
+
+* **Static:** Type checks occur ahead-of-time during semantic analysis and IR validation, prior to execution.
+* **Strong:** No implicit type punning or arbitrary memory reinterpretation. The compiler and runtime strictly prevent operations across incompatible types.
+* **Explicit:** Variable declarations, parameter lists, fields, and function signatures require explicit type annotations. Type inference is intentionally omitted to maximize readability in team codebases.
+* **Nominal:** Types match by explicit name, not incidental structural shape.
+* **Safe Flow Semantics:** The compiler mandates definite assignment across every possible control-flow path before any variable is read.
+
+### Memory Architecture
+
+* **Deterministic Automatic Reference Counting (ARC):** Heap-allocated objects carry reference counters incremented on assignment and decremented on scope exit.
+* **Zero Stop-the-World Pauses:** Reclamation happens immediately when the strong reference count reaches zero, avoiding non-deterministic garbage collection freezes.
+* **Cycle Prevention:** Programmers use weak references (`AS WEAK T OR NULL`) to break reference cycles without keeping objects alive unnaturally.
+* **No Manual Free:** The language does not expose unsafe manual deallocation (`free` or `delete`), eliminating use-after-free and double-free vulnerability vectors. Value types (scalars, fixed arrays) reside directly on the stack or within their containing object.
+
+### Execution Architecture and Interoperability
+
+* **Dual-Backend Single Pipeline:** One unified frontend lowers source to a validated intermediate representation (BN IR). The same validated IR executes on the reference interpreter (`bni`) or compiles via LLVM ahead-of-time (`bnc`) to standalone machine binaries.
+* **Native C Interoperability (`BNFfi`):** Safe, high-performance C ABI integration through dynamic loading and libffi, allowing direct invocation of system libraries without requiring `unsafe` blocks in application code.
+
+## Application Domains and Possibilities
+
+Basic Next is designed for workloads requiring maintainability, predictability, and safety:
+
+### Systems Services and Network Microservices
+
+* Building HTTP services, APIs, and background daemons using `BNWeb` and `HOST.Net`.
+* Fine-grained security sandboxing through `HOST.Policy` (controlling filesystem access, network egress, process execution, and hardware clock resolution).
+
+### Low-Latency and Predictable Environments
+
+* Edge nodes, telecommunication gateways, and real-time processing pipelines where tracing garbage collection pauses are unacceptable.
+* Deterministic object destruction guarantees that network sockets, file handles, and database locks release at exact program boundaries.
+
+### Local Data Engineering and Tabular Analytics
+
+* Fast local data ingestion, transformation, and filtering using `BNData` (columnar `DataFrame` structures).
+* Embedded transactional persistence with `BNSqlite` and zero-dependency structured data interchange via `BNJson` and `BNMath`.
+
+### Infrastructure Utilities and CLI Tooling
+
+* Development velocity with `bni run` for immediate scripting and regression testing without compilation delays.
+* Production distribution via `bnc -o tool`, producing single standalone executable binaries without runtime dependencies or external virtual machine requirements.
+
+### Native Integration and Legacy Interop
+
+* Augmenting existing C or C++ shared libraries (`.so`, `.dylib`, `.dll`) through the `BNFfi` standard module.
+* Writing high-level orchestration, business rules, and safety wrappers around high-performance native engines.
+
 ## Syntax and Conventions
 
 ### The Case Convention (UPPERCASE Keywords)

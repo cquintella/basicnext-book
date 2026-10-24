@@ -98,6 +98,7 @@
 - Appendix K: [`BNCrypto`](18_bncrypto.md)
 - Appendix L: [`BNSqlite`](19_bnsqlite.md)
 - Appendix M: [Debugging Basic Next (`bni dap`)](20_debugging.md)
+- Appendix N: [`BNFfi` (C Foreign Function Interface)](22_bnffi.md)
 
 ---
 

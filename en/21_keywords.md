@@ -2,7 +2,9 @@
 
 [← Previous: Appendices](10_appendices.md) · [Contents](toc.md)
 
-This appendix is the reading manual for every reserved word. Each entry states what the word does in a program. The normative registry, including which spellings exist and which diagnostic a collision produces, is [`keywords.md`](../../../language/0.6/keywords.md). Grammar is [`0.6.ebnf`](../../../language/0.6/0.6.ebnf); behaviour is [`0.6.md`](../../../language/0.6/0.6.md).
+This appendix is the reading manual for every reserved word. A command entry opens with the form you write, then says what that form does. Words that are not commands state only their role. The normative registry, including which spellings exist and which diagnostic a collision produces, is [`keywords.md`](../../../language/0.6/keywords.md). Grammar is [`0.6.ebnf`](../../../language/0.6/0.6.ebnf); behaviour is [`0.6.md`](../../../language/0.6/0.6.md).
+
+In a form, a word in uppercase is written as shown. A lowercase word is a placeholder you replace. Square brackets mark an optional part. An ellipsis repeats the preceding part. A form is the shape of the command, not a whole program.
 
 When the grammar places two reserved words together, they are one construct and one entry here. `END FUNCTION` closes a function. It is not the entry for `END` followed by the entry for `FUNCTION`. The same rule covers `END IF`, `END FOR`, `END WHILE`, `END REPEAT`, `END CLASS`, `END STRUCT`, `END INTERFACE`, `ELSE IF`, `FOR EACH`, `EXIT FOR`, `EXIT WHILE`, `EXIT REPEAT`, `CONTINUE FOR`, `CONTINUE WHILE`, `CONTINUE REPEAT`, `POINTER TO`, `ASYNC FUNCTION`, `FUNCTION CONSTRUCTOR`, `FUNCTION DESTRUCTOR`, `EXPORT IMPORT`, and `AS WEAK`. Each half stays reserved, so neither word can be a name.
 
@@ -46,15 +48,31 @@ END FUNCTION
 
 ### LET
 
-`LET` declares a binding: a local, a field, or a parameter's sibling in a declaration list. The type follows `AS` and stays fixed for the life of the binding. An initializer is optional; when it is absent the binding takes the default of its type. Several names of one type may share a statement, each with its own initializer. Taught in [chapter 2](02_common_programming_concepts.md).
+`LET name [, name] AS Type [= expression [, expression]]`
+
+`LET [name [AS Type], …] = expression`
+
+`LET` declares a binding: a local, a field, or a parameter's sibling in a declaration list. The type follows `AS` and stays fixed for the life of the binding. An initializer is optional; when it is absent the binding takes the default of its type. Several names of one type may share a statement, each with its own initializer. The bracket form binds several names from one vector or one `STRUCT`. A vector fills the names by position, from the first element. A `STRUCT` fills each name from the field of that same name. `AS` on a name inside the brackets is optional. Taught in [chapter 2](02_common_programming_concepts.md).
 
 ### CONST
 
-`CONST` declares a module constant. A scalar literal may omit `AS`; the inferred integer is `INTEGER` (`INT32`) and the inferred float is `FLOAT` (`FLOAT64`). The value must fit the declared or inferred type. A constant that does not fit is `TYPE_MISMATCH`.
+`CONST name [AS Type] = expression`
+
+`[EXPORT] CONST name [AS Type] = literal`
+
+`CONST` declares a constant. Inside a function the value is an expression. At module level the value is one literal, and a leading minus on a numeric literal is part of that literal. `EXPORT` makes a module constant visible to importers. A scalar literal may omit `AS`; the inferred integer is `INTEGER` (`INT32`) and the inferred float is `FLOAT` (`FLOAT64`). The value must fit the declared or inferred type. A constant that does not fit is `TYPE_MISMATCH`.
 
 ### AS
 
-`AS` names a type. It appears on a binding (`LET n AS INTEGER`), a parameter, a function result (`AS VOID`), a conversion (`value AS STRING`), and a counted or `FOR EACH` variable. The weak form is the separate entry `AS WEAK`. Conversion is explicit: an expression does not change type because it is stored, passed, or returned. Mixing an integer with a floating-point operand is `TYPE_MISMATCH`; write `AS`.
+`name AS Type`
+
+`expression AS BOOLEAN`
+
+`expression AS numeric-type`
+
+`expression AS STRING`
+
+`AS` names a type. It appears on a binding (`LET n AS INTEGER`), a parameter, a function result (`AS VOID`), a conversion, and a counted or `FOR EACH` variable. The conversion form accepts `BOOLEAN`, a numeric type, or `STRING`. The weak form is the separate entry `AS WEAK`. Conversion is explicit: an expression does not change type because it is stored, passed, or returned. Mixing an integer with a floating-point operand is `TYPE_MISMATCH`; write `AS`.
 
 ## Types
 
@@ -202,129 +220,262 @@ Conditions are `BOOLEAN`. The forms are taught in [chapter 3](03_control_flow.md
 
 ### IF
 
-`IF` chooses. The block form is `IF` condition `THEN`, optional `ELSE IF` chains, an optional `ELSE`, and `END IF`. The single-line form is `IF` condition `THEN` statement, with an optional `ELSE` statement. The statement may be `EXIT`, `CONTINUE`, `RETURN`, or `STOP`.
+```text
+IF condition THEN
+    statements
+ELSE IF condition THEN
+    statements
+ELSE
+    statements
+END IF
+```
+
+`IF condition THEN statement [ELSE statement]`
+
+`IF` chooses. The block form puts `THEN` at the end of the line, then the statements, optional `ELSE IF` chains, an optional `ELSE`, and `END IF`. The single-line form keeps one simple statement after `THEN`, and an optional simple statement after `ELSE`, and has no `END IF`. That statement may be `EXIT`, `CONTINUE`, `RETURN`, or `STOP`.
 
 ### THEN
+
+`IF condition THEN`
+
+`IF condition THEN statement`
 
 `THEN` separates the condition from the body. A `THEN` followed by a statement on the same line is the single-line form and has no `END IF`.
 
 ### ELSE
 
-`ELSE` introduces the alternative body of an `IF`.
+```text
+ELSE
+    statements
+```
+
+`ELSE statement`
+
+`ELSE` introduces the alternative body of an `IF`. In the block form it stands on its own line. In the single-line form one simple statement follows it on the same line.
 
 ### ELSE IF
 
-`ELSE IF` is one construct. It tests another condition inside a block `IF`, and the block still closes with `END IF`.
+```text
+ELSE IF condition THEN
+    statements
+```
+
+`ELSE IF` is one construct. It tests another condition inside a block `IF`, and the block still closes with `END IF`. It is not used in the single-line form.
 
 ### END
+
+`END IF`
+
+`END WHILE`
+
+`END REPEAT`
+
+`END FOR`
+
+`END FUNCTION`
+
+`END CLASS`
+
+`END STRUCT`
+
+`END INTERFACE`
 
 `END` occurs only as the first word of a closer. The closer is the entry below, not this word alone.
 
 ### END IF
 
-`END IF` closes a block `IF`. The single-line form `IF` condition `THEN` statement has no `END IF`.
+`END IF`
+
+`END IF` closes a block `IF`. The single-line form `IF condition THEN statement` has no `END IF`.
 
 ### END WHILE
+
+`END WHILE`
 
 `END WHILE` closes a `WHILE`.
 
 ### END REPEAT
 
+```text
+UNTIL condition
+END REPEAT
+```
+
 `END REPEAT` closes a `REPEAT`, after the `UNTIL` condition.
 
 ### END FOR
+
+`END FOR`
 
 `END FOR` closes a counted `FOR` and a `FOR EACH`.
 
 ### END FUNCTION
 
+`END FUNCTION`
+
 `END FUNCTION` closes a function body, including `FUNCTION CONSTRUCTOR` and `FUNCTION DESTRUCTOR`. An interface signature has no body and no `END FUNCTION`.
 
 ### END CLASS
+
+`END CLASS`
 
 `END CLASS` closes a `CLASS`.
 
 ### END STRUCT
 
+`END STRUCT`
+
 `END STRUCT` closes a `STRUCT`.
 
 ### END INTERFACE
+
+`END INTERFACE`
 
 `END INTERFACE` closes an `INTERFACE`.
 
 ### WHILE
 
+```text
+WHILE condition
+    statements
+END WHILE
+```
+
 `WHILE` tests the condition before the body and closes with `END WHILE`. A condition that is already `FALSE` skips the body.
 
 ### REPEAT
+
+```text
+REPEAT
+    statements
+UNTIL condition
+END REPEAT
+```
 
 `REPEAT` runs the body, then tests. It closes with `UNTIL` and `END REPEAT`, and the body runs at least once.
 
 ### UNTIL
 
+```text
+UNTIL condition
+END REPEAT
+```
+
 `UNTIL` is the condition after a `REPEAT` body. `TRUE` ends the loop.
 
 ### FOR
 
-`FOR` is the counted loop: `FOR i [AS T] = first TO last [STEP s]`, closed by `END FOR`. Without `AS`, `i` is `INTEGER`. `first`, `last`, and the step are evaluated once, in that order, before the first iteration. The step defaults to `1`. A positive step continues while `i <= last`; a negative step continues while `i >= last`. The body may assign `i`. A floating-point bound is `TYPE_MISMATCH`.
+```text
+FOR name [AS integer-type] = first TO last [STEP step]
+    statements
+END FOR
+```
+
+`FOR` is the counted loop. Without `AS`, `name` is `INTEGER`. `integer-type` is `BYTE`, `INT8`, `INT16`, `INT32`, `INT64`, `UINT16`, `UINT32`, `UINT64`, `INTEGER`, or `TIMESTAMP`. `first`, `last`, and the step are evaluated once, in that order, before the first iteration. The step defaults to `1`. A positive step continues while `name <= last`; a negative step continues while `name >= last`. The body may assign `name`. A floating-point bound is `TYPE_MISMATCH`.
 
 ### FOR EACH
 
-`FOR EACH` is one construct: `FOR EACH x [AS T] IN source`, closed by `END FOR`. `source` is a vector or a `STRING`, evaluated once. `x` is a constant binding holding a copy of the element. Without `AS`, `x` has the element type, which is `STRING` when the source is a `STRING`.
+```text
+FOR EACH name [AS Type] IN source
+    statements
+END FOR
+```
+
+`FOR EACH` is one construct. `source` is a vector or a `STRING`, evaluated once. `name` is a constant binding holding a copy of the element. Without `AS`, `name` has the element type, which is `STRING` when the source is a `STRING`.
 
 ### EACH
+
+`FOR EACH name [AS Type] IN source`
 
 `EACH` occurs only in `FOR EACH`.
 
 ### IN
 
+`FOR EACH name [AS Type] IN source`
+
 `IN` names the vector or `STRING` that `FOR EACH` walks.
 
 ### TO
 
-`TO` names the last value of a counted `FOR`. The same word appears in a pointer type, `POINTER TO T`.
+`FOR name [AS integer-type] = first TO last [STEP step]`
+
+`POINTER TO Type`
+
+`TO` names the last value of a counted `FOR`. The same word appears in a pointer type, `POINTER TO Type`.
 
 ### STEP
+
+`FOR name [AS integer-type] = first TO last STEP step`
 
 `STEP` is the increment of a counted `FOR`. The default is `1`. A literal `STEP 0` is `TYPE_MISMATCH`. A step that is `0` at run time stops the program with `INVALID_FOR_STEP`.
 
 ### EXIT
 
-`EXIT` occurs only in `EXIT FOR`, `EXIT WHILE`, and `EXIT REPEAT`.
+`EXIT FOR`
+
+`EXIT WHILE`
+
+`EXIT REPEAT`
+
+`EXIT` occurs only in those three statements. `EXIT` alone is not a statement.
 
 ### EXIT FOR
+
+`EXIT FOR`
 
 `EXIT FOR` leaves the innermost counted `FOR` or `FOR EACH`. Outside such a loop the statement is `INVALID_LOOP_CONTROL`.
 
 ### EXIT WHILE
 
+`EXIT WHILE`
+
 `EXIT WHILE` leaves the innermost `WHILE`. Outside such a loop the statement is `INVALID_LOOP_CONTROL`.
 
 ### EXIT REPEAT
+
+`EXIT REPEAT`
 
 `EXIT REPEAT` leaves the innermost `REPEAT`. Outside such a loop the statement is `INVALID_LOOP_CONTROL`.
 
 ### CONTINUE
 
-`CONTINUE` occurs only in `CONTINUE FOR`, `CONTINUE WHILE`, and `CONTINUE REPEAT`.
+`CONTINUE FOR`
+
+`CONTINUE WHILE`
+
+`CONTINUE REPEAT`
+
+`CONTINUE` occurs only in those three statements. `CONTINUE` alone is not a statement.
 
 ### CONTINUE FOR
+
+`CONTINUE FOR`
 
 `CONTINUE FOR` starts the next iteration of the innermost counted `FOR` or `FOR EACH`. A counted `FOR` adds its step first. Outside such a loop the statement is `INVALID_LOOP_CONTROL`.
 
 ### CONTINUE WHILE
 
+`CONTINUE WHILE`
+
 `CONTINUE WHILE` starts the next iteration of the innermost `WHILE`. Outside such a loop the statement is `INVALID_LOOP_CONTROL`.
 
 ### CONTINUE REPEAT
+
+`CONTINUE REPEAT`
 
 `CONTINUE REPEAT` starts the next iteration of the innermost `REPEAT`. Outside such a loop the statement is `INVALID_LOOP_CONTROL`.
 
 ### STOP
 
-`STOP code` ends the program with status `code`, after releasing the locals of every running function, innermost first. `code` is an integer in `0..255`. A literal outside that range is `INVALID_EXIT_CODE` at compile time. A value outside it at run time stops the program with `INVALID_EXIT_CODE` and status `1`.
+`STOP code`
+
+`STOP code` ends the program with status `code`, after releasing the locals of every running function, innermost first. `code` is an integer expression in `0..255`. A literal outside that range is `INVALID_EXIT_CODE` at compile time. A value outside it at run time stops the program with `INVALID_EXIT_CODE` and status `1`.
 
 ### RETURN
+
+`RETURN`
+
+`RETURN value`
 
 `RETURN` leaves the current function. A function declared `AS VOID` returns with `RETURN` and no value. Any other result type returns a value of that type. On every path that can finish, a non-`VOID` function returns a value.
 
@@ -334,21 +485,51 @@ A module is one file. There are no top-level statements. The entry point is a pa
 
 ### FUNCTION
 
-`FUNCTION` declares a function, and it names a function value: `FUNCTION(T1, …) AS R`. The body closes with `END FUNCTION`. An interface lists signatures only, so an interface member has no body and no `END FUNCTION`. `FUNCTION CONSTRUCTOR` and `FUNCTION DESTRUCTOR` are separate entries.
+```text
+[EXPORT] [ASYNC] FUNCTION Name([name AS Type, …]) AS Type
+    statements
+END FUNCTION
+```
+
+`FUNCTION(Type, …) AS Type`
+
+`FUNCTION` declares a function. The body closes with `END FUNCTION`. The second form is the type of a function value: the names of the parameters are absent, and only their types are written. An interface lists signatures only, so an interface member has no body and no `END FUNCTION`. `FUNCTION CONSTRUCTOR` and `FUNCTION DESTRUCTOR` are separate entries.
 
 ### EXPORT
 
-`EXPORT` makes a declaration visible to importers. A declaration without `EXPORT` is private to its module; a use from outside is `NAME_NOT_FOUND`.
+`EXPORT FUNCTION …`
+
+`EXPORT CLASS …`
+
+`EXPORT STRUCT …`
+
+`EXPORT INTERFACE …`
+
+`EXPORT CONST name [AS Type] = literal`
+
+`EXPORT IMPORT path AS Alias`
+
+`EXPORT` makes a declaration visible to importers. It is written immediately before the declaration. A declaration without `EXPORT` is private to its module; a use from outside is `NAME_NOT_FOUND`.
 
 ### EXPORT IMPORT
 
-`EXPORT IMPORT` is one construct: `EXPORT IMPORT path AS Alias` imports `path` and re-exports it under `Alias`. A further importer reaches it as `This.Alias.Name`. Only a module import may be re-exported, not a `HOST` capability.
+`EXPORT IMPORT path AS Alias`
+
+`EXPORT IMPORT` is one construct. It imports `path` and re-exports it under `Alias`. A further importer reaches it as `This.Alias.Name`. Only a module import may be re-exported, not a `HOST` capability.
 
 ### IMPORT
 
-`IMPORT path AS Alias` makes the exported declarations of `path` visible as `Alias.Name`. Imports form no cycle, re-exports included; a module that reaches itself is `IMPORT_CYCLE`. A `HOST` capability other than `HOST.Args` is imported the same way: `IMPORT HOST.FileSystem AS Files`. `Exec`, `Env`, `Close`, and the other capability members are identifiers, not keywords.
+`IMPORT path AS Alias`
+
+`IMPORT HOST.Capability AS Alias`
+
+`IMPORT path AS Alias` makes the exported declarations of `path` visible as `Alias.Name`. `path` is one or more names separated by `.`. Imports form no cycle, re-exports included; a module that reaches itself is `IMPORT_CYCLE`. A `HOST` capability other than `HOST.Args` is imported the same way: `IMPORT HOST.FileSystem AS Files`. `Exec`, `Env`, `Close`, and the other capability members are identifiers, not keywords.
 
 ### HOST
+
+`HOST.Args`
+
+`IMPORT HOST.Capability AS Alias`
 
 `HOST` is the built-in capability object. `HOST.Args` needs no `IMPORT`. Every other capability is named with `IMPORT HOST.… AS Alias`. `HOST` itself is not re-exported by `EXPORT IMPORT`. The capabilities are taught in [chapter 8](08_standard_library_and_host.md).
 
