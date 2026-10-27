@@ -66,8 +66,8 @@ This edition teaches the 0.6 line of Basic Next and is checked against the 0.6.1
 - Iterating over a Vector
 - Measuring: `LEN` and `SIZEOF`
 - Strings as Sequences
-- Value Types (`STRUCT`)
-- Destructuring a vector or a `STRUCT`
+- Structures (`STRUCT`)
+- Destructuring
 - Worked Example
 
 ### 7. [Absence, Alternatives and Errors](07_alternatives_and_errors.md)
@@ -89,21 +89,22 @@ This edition teaches the 0.6 line of Basic Next and is checked against the 0.6.1
 ## Part III — Objects and Memory
 
 ### 9. [Classes and Interfaces](09_classes_and_interfaces.md)
-- Reference Types (`CLASS`)
+- Objects: Data and Behaviour
+- Objects Are Shared, Not Copied
 - Visibility and `SELF`
-- Constructors and Destructors
-- Static Members
+- Constructors
+- Class Members: `STATIC`
 - Inheritance
-- Contracts (`INTERFACE` and `IMPLEMENTS`)
+- Interfaces
 - Exporting a Class
 
 ### 10. [Memory](10_memory.md)
-- Strong references and destructors
-- When an object is released
-- Parameters keep the argument alive
-- Weak references
+- Strong References
+- When an Object Is Freed
+- Reference Cycles
+- Weak References
 - `RELEASE`
-- Regions and pointers
+- Regions and Pointers
 
 ## Part IV — Programs in the Real World
 
@@ -123,7 +124,11 @@ This edition teaches the 0.6 line of Basic Next and is checked against the 0.6.1
 - Restricting File Access: the Sandbox
 
 ### 14. [Networking](14_networking.md)
-- `HOST.Net`
+- Design Principles
+- Addresses, Networks, and Name Resolution
+- TCP: Reliable Streams
+- UDP: Independent Datagrams
+- ICMP Echo
 - HTTP with `BNWeb`
 - Interpreter and Compiler Support
 

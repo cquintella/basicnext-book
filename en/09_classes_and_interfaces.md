@@ -2,9 +2,17 @@
 
 [← Previous: Modules](08_modules.md) · [Contents](toc.md)
 
-The types of Part II describe data. A vector holds values of one type, a `STRUCT` holds named fields, and the functions that work on them live elsewhere in the program, connected to the data only by their parameters. That separation serves well while the data is simple. It serves less well once a value has rules that must always hold — an account balance that changes only through deposits and withdrawals, a counter that only goes up — because any function anywhere can reach into a struct and change a field.
+The types that were presented in Part II describe basic data. A vector, an aggregate type, holds values of the same type, a `STRUCT` holds named fields, and the functions that work on them live elsewhere in the program, connected to the data only by their parameters. This kind of separation serves well while the data is simple. But it serves less well once a value has rules that must always hold — an account balance that changes only through deposits and withdrawals, a counter that only goes up — because any function anywhere can reach into a struct and change a field.
 
 A *class* addresses this by keeping the data and the operations that are allowed on it in one declaration. The fields of an object can be hidden from the rest of the program, and the functions declared inside the class, called *methods*, become the only way to change them. This chapter introduces classes, the visibility of their members, constructors, class-level (`STATIC`) members, inheritance, and interfaces. It leaves one question for [chapter 10](10_memory.md): when an object stops existing.
+
+## Objects: Data and Behaviour
+
+An *object* is a value that carries two things: *data*, the current values of its fields, which together form its *state*, and *behaviour*, the operations it can perform on that state. A structure has only the first. It is a passive record, and everything that happens to it is done from outside, by functions that receive it as a parameter. An object also holds the code that describes what it can do, and the program acts on it by asking it to perform one of those operations rather than by editing its fields directly.
+
+A *class* is the declaration that defines a kind of object: the fields every object of the class has, and the operations they share. Each object created from a class is an *instance* of it. All instances of `Account` have a balance and know how to accept a deposit; each has its own balance.
+
+Keeping data and behaviour together makes *encapsulation* possible. Because the operations that change an object's state are declared with the state itself, the class can hide its fields from the rest of the program and expose only the operations, and those operations become the single place where the rules of the type are enforced. A balance that may only change through deposits and withdrawals is then a property the class guarantees, not a convention every caller must remember. Encapsulation in turn supports the two further ideas of this chapter: *inheritance*, by which one class is defined as an extension of another, and *polymorphism*, by which code written for a general kind of object works with any more specific kind.
 
 ## Objects Are Shared, Not Copied
 
@@ -35,10 +43,12 @@ END FUNCTION
 
 Each element of the program has a role that the rest of the chapter develops:
 
-* `CLASS Account ... END CLASS` declares the type. Its body lists *fields*, declared like bindings but without `LET`, and *methods*, declared like functions.
+* `CLASS Account ... END CLASS` declares the type. Its body lists *fields*, declared like bindings but without `LET`, and *methods*, which express the behaviour of the object.
 * `NEW Account(100)` creates an object of the class and runs its *constructor*, the special method `FUNCTION CONSTRUCTOR`, with the argument `100`. An object is always created this way; there is no literal form for it.
 * `alias.Deposit(50)` calls a method. The object before the dot is the one the method works on.
 * Inside a method, `SELF` names that object. `SELF.balance` is the `balance` field of whichever account the method was called on.
+
+Basic Next has no separate keyword for methods: a method is written with `FUNCTION`, with the same parameter list, return type, `RETURN`, and `END FUNCTION` as the functions of [chapter 5](05_functions.md), and everything said there about parameters and return analysis applies to it unchanged. The choice reflects what a method is. At bottom, a method is a function that belongs to its class: it is declared inside the class, it may use the class's private members, and, besides its declared parameters, it receives the object on which it was called, which it knows as `SELF`. `alias.Deposit(50)` is therefore a call to the function `Deposit` of `Account`, with `alias` as `SELF` and `50` as `amount`.
 
 Because a binding holds a reference, `CONST` applied to an object fixes the reference, not the object. A constant that holds an account cannot be made to designate a different account, but nothing prevents the account itself from receiving a deposit. Whether an object can change is decided by the class, through the visibility of its members, which is the subject of the next section.
 
@@ -252,7 +262,7 @@ Four mechanisms are at work.
 
 **A subclass object can be used wherever its base class is expected.** `wide` is declared as a `Shape` and holds a `Rectangle`. The assignment needs no conversion, because every rectangle is a shape; this direction of conversion is called an *upcast*.
 
-**Methods are dispatched by the object, not by the binding.** `Rectangle` redefines `Area`, and the redefinition is marked `OVERRIDE`. When `Describe`, a method written once in `Shape`, calls `SELF.Area()`, the method that runs is the one of the object's actual class: `0.0` for the plain shape, `10.0` for the rectangle. `Square` declares no `Area` of its own and therefore inherits the one of `Rectangle`. This behaviour, *dynamic dispatch*, is what lets general code such as `Describe` work with kinds of shape that did not exist when it was written.
+**Methods are dispatched by the object, not by the binding.** `Rectangle` redefines `Area`, and the redefinition is marked `OVERRIDE`. When `Describe`, a method written once in `Shape`, calls `SELF.Area()`, the method that runs is the one of the object's actual class: `0.0` for the plain shape, `10.0` for the rectangle. `Square` declares no `Area` of its own and therefore inherits the one of `Rectangle`. This behaviour, *dynamic dispatch*, is the mechanism of polymorphism: it is what lets general code such as `Describe` work with kinds of shape that did not exist when it was written.
 
 The `OVERRIDE` marker is required, and its absence is an error rather than a silent redefinition. The rule protects against two common mistakes: redefining an inherited method by accident, through a name that happened to be free, and believing a method overrides one that the base class does not actually have:
 
@@ -315,7 +325,7 @@ Report: Q3
 Invoice: 250
 ```
 
-`Report` and `Invoice` share no base class and no code, yet `PrintAll` handles both, because both promise `Render`. An interface name is a type: a binding, a parameter, or a vector element of type `Printable` may hold an object of any class that implements it. Through such a binding only the interface's members are visible; `document.title` would be rejected even when the object is a `Report`. As with base classes, the conversion back from an interface to a concrete class is not available.
+`Report` and `Invoice` share no base class and no code, yet `PrintAll` handles both, because both promise `Render` — polymorphism without inheritance. An interface name is a type: a binding, a parameter, or a vector element of type `Printable` may hold an object of any class that implements it. Through such a binding only the interface's members are visible; `document.title` would be rejected even when the object is a `Report`. As with base classes, the conversion back from an interface to a concrete class is not available.
 
 The vector literal shows a further rule. Where a vector type is declared, each element is checked against the declared element type, so `NEW Report("Q3")` and `NEW Invoice(250)` are each upcast to `Printable`. A literal written without a declared type, such as the argument of `LEN`, takes the type of its first element instead, and every other element must be assignable to it.
 
