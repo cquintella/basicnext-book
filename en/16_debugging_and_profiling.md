@@ -2,6 +2,10 @@
 
 [← Previous: Concurrency](15_concurrency.md) · [Contents](toc.md)
 
+*Debugging* is the activity of locating and correcting the cause of a program's incorrect behaviour. Its difficulty lies in the distance between a *failure*, the wrong output that is observed, and the *defect* in the text that produced it: by the time a wrong value is printed, the statement that computed it may have run long before, in another function. A *debugger* narrows that distance by letting the programmer observe the program while it runs. Its basic tools are few. A *breakpoint* marks a line at which execution pauses. *Stepping* then runs the program one statement at a time, either entering the functions it calls (*step into*) or treating each call as one step (*step over*). While the program is paused, the debugger shows the *call stack*, the chain of active function calls that led to the current line, each with its own parameters and locals, and lets the programmer inspect the value of any binding (Zeller, 2009).
+
+*Profiling* answers a different question: not why a program is wrong, but where it spends its time. A *profiler* measures how often each function is called and how long it runs, so that optimization effort goes where it can matter instead of where it is guessed to matter.
+
 Debugging in Basic Next is built around an industry-standard foundation: the **Debug Adapter Protocol (DAP)**. Rather than requiring developers to learn a proprietary debugger tool or interface, Basic Next provides an in-process DAP server through the interpreter:
 
 ```shell
@@ -343,6 +347,10 @@ bni run --profile json app.bn
 Debugging in Basic Next rests on standard protocols rather than on a debugger of its own. `bni dap` serves the Debug Adapter Protocol, so VS Code, Neovim, Vim, and Helix can set breakpoints, step through a program, and inspect its variables and reference counts. A native executable built with `bnc -g` carries debug information for the platform's own debuggers, and `--opt none` keeps the generated code close to the source while debugging. For questions of behaviour and performance rather than correctness, `bni run --trace-events` records runtime events as NDJSON, and `--profile` reports how many times each function was called and where the time was spent.
 
 The appendices that follow are reference material, to be consulted rather than read in order.
+
+## References
+
+- Zeller, A. (2009). *Why Programs Fail: A Guide to Systematic Debugging* (2nd ed.). Morgan Kaufmann.
 
 ---
 

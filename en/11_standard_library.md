@@ -4,6 +4,10 @@
 
 The language core is deliberately small. Mathematics, string utilities, data formats, logging, HTTP, databases, and cryptography live in standard-library modules whose names begin with `BN`. Each is an ordinary module, imported with an alias as in [chapter 8](08_modules.md), and nothing from it is available until it is imported. This chapter covers the modules most programs use — `BNMath`, `BNString`, and `BNPallet` — and the temporal operations; the full contract of every module is in the appendices.
 
+## Languages and Their Libraries
+
+A *library* is a collection of declarations written once and reused by many programs. Every practical language is used together with one, and the boundary between what a language defines and what its library provides is a design decision. A large core makes common facilities available without ceremony, but every program then carries them, and changing one means changing the language. A small core with a library keeps the language stable and lets each facility evolve, be replaced, or be left out on its own. Basic Next takes the second path: the core defines the types, statements, and `HOST`, and everything else is a module that a program imports only when it needs it. The library that ships with the toolchain is the *standard library*.
+
 ## `BNMath`
 
 The mathematics standard library is the `BNMath` module. Every use requires an import; the alias is used for member calls.
@@ -128,7 +132,9 @@ The value is an opaque number, not a colour object; extracting the channels is o
 
 ## Dates and Times
 
-[Chapter 2](02_values_types_and_variables.md#temporal-types) introduced the four temporal types and their defaults. They distinguish an instant from a calendar value:
+Programs deal with time in two different senses, and confusing them is a common source of defects. An *instant* is a point on a single global time line, independent of where it is observed: the moment a message was sent. *Civil time* is how people in a particular place name instants: a date and a time of day on a calendar, such as 27 October 2026 at 15:30. The relation between the two depends on a *time zone*, a region that follows one set of rules for its offset from Coordinated Universal Time (UTC), including changes for daylight saving time. The same instant is 18:30 in UTC and 15:30 in São Paulo, and a local time such as 02:30 may not exist at all on the night a zone moves its clocks forward. Instants are therefore stored and compared as counts from a fixed origin — conventionally the *Unix epoch*, 1 January 1970 at 00:00 UTC — and converted to civil time only to be read by people, always with an explicit time zone. The rules of every zone are maintained in the IANA Time Zone Database (IANA, 2026), whose identifiers, such as `America/Sao_Paulo`, Basic Next uses.
+
+[Chapter 2](02_values_types_and_variables.md#temporal-types) introduced the four temporal types and their defaults. They keep the distinction between instant and civil time in the types themselves:
 
 * `TIMESTAMP` is an alias for `INT64` that counts milliseconds since the Unix epoch in UTC. It supports ordinary integer arithmetic.
 * `DATE` is a Gregorian calendar date, such as `2026-10-27`.
@@ -181,6 +187,10 @@ All of them follow the conventions of [Appendix E](appendix_e_external_modules.m
 The standard library consists of `BN*` modules, each imported with an alias and none available otherwise. `BNMath` provides IEEE 754 mathematics, descriptive statistics, the limits of the numeric types, and constants such as `Pi`, with results that are identical under the interpreter and the compiler. `BNString` wraps text in an object with operations for searching, trimming, case conversion, and tokenizing. `BNPallet` shows that a module may consist of constants alone. Dates and times have no literal form: they are built from their standard text forms, and every conversion between an instant and a local calendar value names its time zone explicitly. The remaining modules, from JSON to SQLite and cryptography, are documented in the appendices.
 
 The next chapter turns from libraries written in Basic Next to the capabilities that only the host can provide.
+
+## References
+
+- IANA (2026). *Time Zone Database*. Internet Assigned Numbers Authority. Continuously updated; accessed October 2026. https://www.iana.org/time-zones
 
 ---
 

@@ -120,6 +120,8 @@ The names you create — variables, functions, classes — are case-sensitive an
 
 ## Interpreter and Compiler
 
+A program written in a programming language cannot be executed by the processor as it stands; it must first be analysed and then either executed by another program or translated. An *interpreter* reads a program and carries out its instructions directly, without producing a separate executable: it starts at once and makes the program easy to inspect, at some cost in speed. A *compiler* translates the whole program, ahead of time, into *machine code* for a particular processor, producing an executable file that runs without the compiler and usually faster. Both begin with the same analysis — reading the text, checking its syntax and types — performed by what is called the *frontend*; they differ in their *backend*, the part that executes or translates the result. Basic Next provides both, and makes them share everything up to the backend.
+
 Both tools share one frontend. A program is read, checked, and lowered to a validated intermediate representation (BN IR); the interpreter executes that representation, and the compiler translates the same representation to machine code through LLVM:
 
 ```

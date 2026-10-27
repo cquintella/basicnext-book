@@ -8,6 +8,14 @@ Basic Next has no threads in the language and gives the reserved word `PARALLEL`
 IMPORT BNDispatch AS Dispatch
 ```
 
+## Concurrency and Parallelism
+
+Two terms are often used interchangeably and are worth separating. *Concurrency* is a property of a program's structure: it consists of several activities, or *tasks*, whose executions overlap in time, so that one may start before another has finished. *Parallelism* is a property of its execution: several of those activities run at the same instant, on different processors. A concurrent program may run on a single processor, with the tasks taking turns, and it then gains responsiveness — one task can wait for the network while another computes — but not speed. On several processors the same program can also run in parallel and finish sooner.
+
+Concurrency brings a class of defects that sequential programs do not have. When two tasks access the same data and at least one of them changes it, the result can depend on the exact order in which their steps interleave; such a defect is a *race condition*, and because the interleaving differs from run to run, it may appear rarely and be hard to reproduce. The classical remedy is *mutual exclusion*: a *lock* (or *mutex*) ensures that only one task at a time executes the section of code that touches the shared data, its *critical section* (Dijkstra, 1965). Locks bring a hazard of their own, the *deadlock*, in which each of two tasks holds a lock and waits forever for the other's.
+
+The safest way to avoid these defects is not to share mutable data at all, and to let tasks communicate only through well-defined channels (Hoare, 1978). Basic Next is designed on that principle. Each task works on its own copy of the program's state, tasks exchange values only as arguments and results, and the synchronization objects they do share are provided by the library with explicit timeouts, so that a task waiting for a lock that is never released ends with an error instead of hanging the program.
+
 ## Tasks, Queues, and Tickets
 
 A task is a function declared `ASYNC FUNCTION`, whose result type is `T OR Error`. `ASYNC queue Fn(args)` submits it to a queue and returns a `Dispatch.Ticket OR Error`; `AWAIT ticket(timeoutMs)` waits for the task and yields its `T OR Error`:
@@ -124,6 +132,11 @@ The classes, their members, and the error codes are listed in [Appendix M](appen
 Concurrency in Basic Next is provided by a module, `BNDispatch`, rather than by the language: there are no threads and no mutable state shared between tasks. A task is a named `ASYNC FUNCTION`. `ASYNC queue Fn(args)` submits it to a queue with a fixed number of workers and returns a ticket, and `AWAIT ticket(ms)` waits for its result as `T OR Error`. Tasks run on their own copy of the program's state and coordinate only through the `BNDispatch` objects — mutexes, semaphores, groups, barriers — passed to them as arguments. Every bound, from the number of workers to the length of a queue, is explicit, and every wait has a timeout, so a stalled task produces an error instead of a stalled program.
 
 The last chapter of the book turns from writing programs to finding out why one does not behave as expected.
+
+## References
+
+- Dijkstra, E. W. (1965). *Cooperating Sequential Processes* (EWD 123). Technological University, Eindhoven. https://www.cs.utexas.edu/~EWD/transcriptions/EWD01xx/EWD123.html
+- Hoare, C. A. R. (1978). Communicating Sequential Processes. *Communications of the ACM*, 21(8), 666–677. https://doi.org/10.1145/359576.359585
 
 ---
 

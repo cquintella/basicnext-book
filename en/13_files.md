@@ -8,6 +8,14 @@ Files are reached through the `HOST.FileSystem` capability. Like every host oper
 IMPORT HOST.FileSystem AS FS
 ```
 
+## Files, Paths, and Streams
+
+A *file* is a named sequence of bytes kept by the operating system on persistent storage, so that it outlives the process that wrote it. A file is found by its *path*, the sequence of directory names leading to it, such as `data/readings.txt`; a path is *absolute* when it starts at the root of the file system and *relative* when it starts at the process's current directory.
+
+A program does not work on a file directly. It first *opens* it, asking the operating system for access in a given *mode* — to read, to write, or to append — and receives a *handle* through which the following operations go. Reading and writing then proceed as a *stream*: each operation continues from where the previous one stopped. Finally the program *closes* the handle. Closing is more than a formality. Operating systems and runtimes collect small writes in memory, in a *buffer*, and pass them to storage in larger blocks; closing *flushes* what remains in the buffer, and a failure at that moment, such as a full disk, can only be reported then.
+
+Every file is a sequence of bytes, but programs read them in two ways. A *text* file is interpreted as characters, encoded in some character encoding — in Basic Next always UTF-8, the encoding of Unicode that represents ASCII characters in one byte and every other character in two to four (Unicode Consortium, 2024) — and usually divided into lines. A *binary* file is taken as raw bytes, whose meaning is given by a format such as an image, an archive, or a database. The distinction is a matter of interpretation, not of storage, and a program must choose one interpretation for each open file.
+
 ## Text Files
 
 `FS.Open(path, mode)` returns an `FS.File OR Error`. The mode is `FS.READ`, `FS.WRITE` (create or truncate), or `FS.APPEND` (write at the end, creating the file if needed). Close every file you open: `Close()` flushes the data and returns `VOID OR Error`, which is the only place a failed flush is reported. Text is UTF-8.
@@ -158,6 +166,8 @@ A region created with `NEW BYTE[n]` is the byte buffer ([chapter 10](10_memory.m
 
 ## Restricting File Access: the Sandbox
 
+A *sandbox* is an environment in which a program runs with less authority than the process that runs it would otherwise have. It applies the principle of least privilege ([chapter 12](12_host.md#programs-processes-and-the-operating-system)) to a single program: a tool that only needs to read its input directory and write its output directory should not be able to touch anything else, even if a defect or a malicious input leads it to try.
+
 By default a program has the file permissions of the process that runs it: the operating system, user account, container, and service manager decide what it may touch, and Basic Next adds nothing. This is the *unrestricted* profile. It does not mean superuser access; it means Basic Next imposes no directory restrictions of its own.
 
 The *sandboxed* profile limits `HOST.FileSystem` to declared directories. It is selected when the program is run or compiled:
@@ -233,6 +243,10 @@ File operations report failures as `Error` values, not diagnostics; their codes 
 Files are opened with `FS.Open`, which returns `FS.File OR Error`, and every file that is opened must be closed, because `Close` is where a failed write is finally reported. A file is used either for text, read and written in lines of UTF-8, or for bytes, moved through a `POINTER TO BYTE[]` region, but never for both; `ReadLine` returns `STRING OR EOF OR Error`, so the end of a file and a genuine failure are handled separately. By default a program has the file permissions of the process that runs it. The `--sandbox` option, with `--read-root` and `--write-root`, confines `HOST.FileSystem` to declared directories, and the environment variable `BN_FS_POLICY` can narrow that authority further when the program runs, but never widen it.
 
 The next chapter moves from the local file system to other machines.
+
+## References
+
+- Unicode Consortium (2024). *The Unicode Standard, Version 16.0*. https://www.unicode.org/versions/Unicode16.0.0/
 
 ---
 

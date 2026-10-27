@@ -10,6 +10,12 @@ This chapter presents each part with a complete program that runs on the loopbac
 IMPORT HOST.Net AS Net
 ```
 
+## Addresses, Ports, and Protocols
+
+Machines on a network exchange data according to *protocols*: agreed rules for the format of messages and the order in which they are sent. The protocols of the Internet are organized in layers, each relying on the one below. The *Internet Protocol* (IP) carries individual packets from one machine to another; it identifies each network interface by an *IP address*, either a 32-bit IPv4 address written as four decimal numbers (`192.168.10.7`) or a 128-bit IPv6 address written in hexadecimal groups (`::1`) (Postel, 1981a; Deering and Hinden, 2017). A packet delivered to a machine must then reach the right program, and the transport protocols add a *port*, a 16-bit number that identifies one communication endpoint on that machine. An address and a port together, such as `127.0.0.1:8080`, form an *endpoint*.
+
+Two transport protocols sit on top of IP. *TCP* provides a reliable, ordered stream of bytes over a connection between two endpoints, retransmitting what is lost (Eddy, 2022). *UDP* sends independent datagrams with no connection and no guarantee of delivery (Postel, 1980). Alongside them, *ICMP* carries control messages, among them the Echo request and reply used to test whether a machine answers (Postel, 1981b). People, finally, prefer names to numbers: the *Domain Name System* (DNS) translates a host name such as `example.com` into its addresses, a step called *name resolution* (Mockapetris, 1987). A *network* or *subnet* is a range of addresses that share a common prefix, written in CIDR notation as the first address followed by the length of the prefix in bits: `192.168.10.0/24` covers the 256 addresses that begin with `192.168.10`. The address `127.0.0.1` (and `::1` in IPv6) is the *loopback* address, which always designates the local machine.
+
 ## Design Principles
 
 Two rules shape the whole capability, and both exist to make network failures explicit rather than surprising.
@@ -81,7 +87,7 @@ localhost -> 127.0.0.1
 
 ## TCP: Reliable Streams
 
-TCP delivers a stream of bytes between two endpoints, in order and without loss, over a *connection* that one side opens and the other accepts. The side that accepts is conventionally the server: it *listens* on an endpoint and waits for clients. `Net.TCPListen` opens listeners on a set of endpoints, `Accept` waits for a connection, and `Net.TCPConnect` connects. `Read` and `Write` move bytes through a `POINTER TO BYTE[]` buffer; `Read` returns `EOF` when the peer has closed. This program is both server and client on the loopback interface:
+A TCP *connection* is opened by one side and accepted by the other. The side that accepts is conventionally the *server*: it *listens* on an endpoint and waits for *clients* to connect. `Net.TCPListen` opens listeners on a set of endpoints, `Accept` waits for a connection, and `Net.TCPConnect` connects. `Read` and `Write` move bytes through a `POINTER TO BYTE[]` buffer; `Read` returns `EOF` when the peer has closed. This program is both server and client on the loopback interface:
 
 ```basic
 IMPORT HOST.Net AS Net
@@ -148,7 +154,7 @@ Port `0` asks the system for a free port; `LocalEndpoint()` reports which one wa
 
 ## UDP: Independent Datagrams
 
-UDP sends self-contained messages, *datagrams*, with no connection and no guarantee of delivery or order. It suits short request-and-reply exchanges, such as name lookups or measurements, where a lost message is simply asked for again. `Net.UDPBind` opens a socket, `SendTo` sends one datagram, and `Receive(size, timeout)` returns a `UDPPacket` that knows its source, its size, and whether it was truncated to fit:
+Because a datagram stands alone, UDP needs no connection to be opened or closed, and it suits short request-and-reply exchanges, such as name lookups or measurements, where a lost message is simply asked for again. `Net.UDPBind` opens a socket, `SendTo` sends one datagram, and `Receive(size, timeout)` returns a `UDPPacket` that knows its source, its size, and whether it was truncated to fit:
 
 ```basic
 IMPORT HOST.Net AS Net
@@ -211,7 +217,7 @@ payload: 1 2 3
 
 ## ICMP Echo
 
-ICMP Echo asks a host to answer, and is the usual first test of whether a machine is reachable at all. `Net.Ping` sends one ICMP Echo to a parsed address. Timeout, unreachable host, and missing ICMP permission are distinct errors, and a host without ICMP permission still allows every other `HOST.Net` operation.
+An ICMP Echo request asks a host to answer, and is the usual first test of whether a machine is reachable at all. `Net.Ping` sends one ICMP Echo to a parsed address. Timeout, unreachable host, and missing ICMP permission are distinct errors, and a host without ICMP permission still allows every other `HOST.Net` operation.
 
 ```basic
 IMPORT HOST.Net AS Net
@@ -253,6 +259,15 @@ Every example in this chapter runs under `bni run`. `bnc` compiles the TCP, UDP,
 ## Summary
 
 `HOST.Net` gives a program typed and bounded access to the network. Addresses and networks are parsed and validated before use, and `Net.Resolve` is the only operation that turns a host name into addresses. TCP provides ordered, reliable streams over connections; UDP provides independent datagrams; ICMP Echo tests reachability. Every operation that waits takes a timeout and returns `T OR Error`, so an unresponsive peer becomes an error the program handles rather than a program that hangs. HTTP is built on top of these primitives by the `BNWeb` module.
+
+## References
+
+- Deering, S., and Hinden, R. (2017). *Internet Protocol, Version 6 (IPv6) Specification*. RFC 8200. https://www.rfc-editor.org/rfc/rfc8200
+- Eddy, W. (Ed.) (2022). *Transmission Control Protocol (TCP)*. RFC 9293. https://www.rfc-editor.org/rfc/rfc9293
+- Mockapetris, P. (1987). *Domain Names — Concepts and Facilities*. RFC 1034. https://www.rfc-editor.org/rfc/rfc1034
+- Postel, J. (1980). *User Datagram Protocol*. RFC 768. https://www.rfc-editor.org/rfc/rfc768
+- Postel, J. (1981a). *Internet Protocol*. RFC 791. https://www.rfc-editor.org/rfc/rfc791
+- Postel, J. (1981b). *Internet Control Message Protocol*. RFC 792. https://www.rfc-editor.org/rfc/rfc792
 
 ---
 

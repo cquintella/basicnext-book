@@ -4,6 +4,12 @@
 
 A program reaches the operating system only through `HOST`, the one built-in interface of the language. Each part of the system — arguments, the clock, the console, random numbers, files, processes, the environment, the network — is a separate *capability*. This chapter covers the small capabilities; files ([chapter 13](13_files.md)) and the network ([chapter 14](14_networking.md)) have chapters of their own.
 
+## Programs, Processes, and the Operating System
+
+A running program is a *process*: an instance of the program that the operating system has loaded, given memory, and scheduled to run. Everything a process can do beyond computing — read a file, open a network connection, learn the time, start another program — it does by asking the operating system, which decides whether to grant the request. The operating system also hands every process a small amount of information when it starts: the *command-line arguments* typed after the program's name, and the *environment*, a set of named text variables such as `PATH` or `HOME` inherited from the process that started it. When the process ends, it returns an *exit status*, a small integer by which it tells its parent whether it succeeded; by convention `0` means success.
+
+Access to the operating system is also a question of security. The *principle of least privilege* holds that every part of a system should operate with the smallest set of rights its task requires, so that an error or an attack can do no more damage than that task allows (Saltzer and Schroeder, 1975). One way to apply the principle is through *capabilities*: a capability is a reference that both designates a resource and conveys the right to use it, so that a program can affect only what it holds a capability for (Dennis and Van Horn, 1966). Basic Next organizes its access to the operating system in this spirit. Each kind of access is a separate capability of `HOST`, and a program must name in its imports the capabilities it intends to use. A reader can tell from the first lines of a file whether it touches the file system or the network, and the host can refuse a capability that its execution policy does not allow.
+
 ## Capabilities
 
 A program reaches the operating system only through `HOST`. Each capability is imported explicitly (`IMPORT HOST.Clock AS Clock`), except `HOST.Args` and `HOST.NumProcs`, which need no import, and `HOST.Console`, whose import is optional. Nothing reaches the network, the file system, or other processes unless the program says so in its imports, and a restricted host can refuse an import before `Start` runs (`HOST_CAPABILITY_UNAVAILABLE`).
@@ -133,6 +139,8 @@ error[HOST_CAPABILITY_UNAVAILABLE]: window size requires a TTY
 
 ### `HOST.Random`
 
+A *pseudorandom number generator* produces a sequence of numbers that appear random but are computed deterministically from an initial value, the *seed*. The same seed always yields the same sequence, which makes a simulation or a test reproducible. For the same reason such a generator is unsuitable wherever unpredictability is required, as in cryptography.
+
 `R.Random()` returns a `FLOAT` in `[0, 1)`. `R.Seed(n)` makes the following sequence deterministic, and the same seed gives the same sequence under `bni` and `bnc`. Without `Seed`, each run starts from a different state.
 
 ```basic
@@ -244,6 +252,11 @@ Every example in this chapter runs under `bni run`. `bnc` compiles the `Args`, `
 `HOST` is the only path from a Basic Next program to the operating system, and each of its capabilities appears in the program's imports, apart from `Args`, `NumProcs`, and the optional `Console`. A reader can therefore tell from the first lines of a file what it may do to the system it runs on. Host operations that can fail return `T OR Error`, and the program tests `IS Error` before using the value. The capabilities of this chapter supply the command line (`HOST.Args`), the time (`HOST.Clock`), the processor count (`HOST.NumProcs`), screen control (`HOST.Console`), reproducible pseudorandom numbers (`HOST.Random`), other programs (`HOST.Exec`), and the environment (`HOST.Env`).
 
 The next chapter covers the capability most programs need sooner or later: files.
+
+## References
+
+- Dennis, J. B., and Van Horn, E. C. (1966). Programming Semantics for Multiprogrammed Computations. *Communications of the ACM*, 9(3), 143–155. https://doi.org/10.1145/365230.365252
+- Saltzer, J. H., and Schroeder, M. D. (1975). The Protection of Information in Computer Systems. *Proceedings of the IEEE*, 63(9), 1278–1308. https://doi.org/10.1109/PROC.1975.9939
 
 ---
 

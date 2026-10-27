@@ -113,6 +113,7 @@ This edition teaches the 0.6 line of Basic Next and is checked against the 0.6.1
 ## Part IV — Programs in the Real World
 
 ### 11. [The Standard Library](11_standard_library.md)
+- Languages and Their Libraries
 - `BNMath`
 - `BNString`
 - `BNPallet`
@@ -120,14 +121,17 @@ This edition teaches the 0.6 line of Basic Next and is checked against the 0.6.1
 - Other Modules
 
 ### 12. [The HOST](12_host.md)
+- Programs, Processes, and the Operating System
 - Capabilities
 
 ### 13. [Files](13_files.md)
+- Files, Paths, and Streams
 - Text Files
 - Binary Files
 - Restricting File Access: the Sandbox
 
 ### 14. [Networking](14_networking.md)
+- Addresses, Ports, and Protocols
 - Design Principles
 - Addresses, Networks, and Name Resolution
 - TCP: Reliable Streams
@@ -137,6 +141,7 @@ This edition teaches the 0.6 line of Basic Next and is checked against the 0.6.1
 - Interpreter and Compiler Support
 
 ### 15. [Concurrency](15_concurrency.md)
+- Concurrency and Parallelism
 - Tasks, Queues, and Tickets
 - Coordinating Tasks
 - Bounds
