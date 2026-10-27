@@ -1,0 +1,6 @@
+// Companion file for the Basic Next Book. License: MPL-2.0.
+IMPORT shapes AS Shapes
+
+EXPORT FUNCTION Describe(x AS INTEGER) AS STRING
+    RETURN "a square of side " + (x AS STRING) + " has area " + (Shapes.Square(x) AS STRING)
+END FUNCTION

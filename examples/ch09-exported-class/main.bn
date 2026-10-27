@@ -1,0 +1,7 @@
+// Companion file for the Basic Next Book. License: MPL-2.0.
+IMPORT counter AS Lib
+
+FUNCTION Start() AS VOID
+    LET c AS Lib.Counter = NEW Lib.Counter()
+    PRINT c.Twice(21)
+END FUNCTION

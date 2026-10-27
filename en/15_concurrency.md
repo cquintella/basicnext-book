@@ -1,0 +1,131 @@
+# Concurrency
+
+[← Previous: Networking](14_networking.md) · [Contents](toc.md)
+
+Basic Next has no threads in the language and gives the reserved word `PARALLEL` no meaning. Work runs concurrently through the `BNDispatch` module: a program creates a *queue* with a bounded number of workers, submits named functions to it with `ASYNC`, and waits for each result with `AWAIT`. Every wait has a timeout, every queue has a size limit, and every failure arrives as an `Error`.
+
+```basic
+IMPORT BNDispatch AS Dispatch
+```
+
+## Tasks, Queues, and Tickets
+
+A task is a function declared `ASYNC FUNCTION`, whose result type is `T OR Error`. `ASYNC queue Fn(args)` submits it to a queue and returns a `Dispatch.Ticket OR Error`; `AWAIT ticket(timeoutMs)` waits for the task and yields its `T OR Error`:
+
+```basic
+IMPORT BNDispatch AS Dispatch
+
+ASYNC FUNCTION SumTo(limit AS INTEGER) AS INTEGER OR Error
+    LET total AS INTEGER = 0
+    FOR n AS INTEGER = 1 TO limit
+        total += n
+    END FOR
+    RETURN total
+END FUNCTION
+
+FUNCTION Start() AS INTEGER
+    CONST TIMEOUT_MS = 5000
+    LET queue AS Dispatch.Queue OR Error = Dispatch.Queue.Concurrent(2)
+    IF queue IS Error THEN
+        PRINT "queue:", queue.Message
+        RETURN 1
+    END IF
+
+    LET small AS Dispatch.Ticket OR Error = ASYNC queue SumTo(100)
+    LET large AS Dispatch.Ticket OR Error = ASYNC queue SumTo(10000)
+    IF small IS Error OR large IS Error THEN
+        PRINT "submission failed"
+        RETURN 1
+    END IF
+
+    LET first AS INTEGER OR Error = AWAIT small(TIMEOUT_MS)
+    LET second AS INTEGER OR Error = AWAIT large(TIMEOUT_MS)
+    IF first IS Error OR second IS Error THEN
+        PRINT "a task failed"
+        RETURN 1
+    END IF
+    PRINT first, second          // 5050 50005000
+
+    small.Close()
+    large.Close()
+    LET closed AS VOID OR Error = queue.Close(TIMEOUT_MS)
+    IF closed IS Error THEN
+        RETURN 1
+    END IF
+    RETURN 0
+END FUNCTION
+```
+
+`Queue.Concurrent(2)` starts two workers; `Queue.Serial()` starts one, and `Queue.Auto()` one per available processor (see `HOST.NumProcs` in [chapter 12](12_host.md)). Both tasks may run at the same time; `AWAIT` returns each result when it is ready. `queue.Close` cancels pending work and waits for running work to finish; running work is never killed.
+
+A task runs on its own copy of the program's state and shares nothing with the code that submitted it. Its arguments are limited to scalars, `STRING`, the temporal types, and the `BNDispatch` classes themselves; its result to `VOID`, `INTEGER`, `FLOAT`, `STRING`, or `BOOLEAN`. A parameter of another type, such as an object or a vector, is a `TYPE_MISMATCH`. A task must be a named function: there are no closures to submit.
+
+## Coordinating Tasks
+
+Because tasks share no state, they coordinate through objects of `BNDispatch` passed as arguments: a `Mutex`, a `Semaphore`, a `Group`, a `Barrier`, a `Queue`, or a `Ticket` passed to a task names the same object in the worker. Here two tasks take turns on one mutex:
+
+```basic
+IMPORT BNDispatch AS Dispatch
+
+ASYNC FUNCTION Report(name AS STRING, lock AS Dispatch.Mutex) AS VOID OR Error
+    CONST LOCK_TIMEOUT_MS = 1000
+    LET locked AS VOID OR Error = lock.Lock(LOCK_TIMEOUT_MS)
+    IF locked IS Error THEN
+        RETURN locked
+    END IF
+    PRINT "task", name, "holds the lock"
+    RETURN lock.Unlock()
+END FUNCTION
+
+FUNCTION Start() AS VOID
+    CONST TIMEOUT_MS = 5000
+    LET lock AS Dispatch.Mutex OR Error = Dispatch.Mutex.New()
+    LET queue AS Dispatch.Queue OR Error = Dispatch.Queue.Concurrent(2)
+    IF lock IS Error OR queue IS Error THEN
+        PRINT "setup failed"
+        RETURN
+    END IF
+    LET a AS Dispatch.Ticket OR Error = ASYNC queue Report("a", lock)
+    LET b AS Dispatch.Ticket OR Error = ASYNC queue Report("b", lock)
+    IF a IS Error OR b IS Error THEN
+        PRINT "submission failed"
+        RETURN
+    END IF
+    LET joined AS VOID OR Error = queue.Join(TIMEOUT_MS)
+    IF joined IS Error THEN
+        PRINT "join failed:", joined.Message
+    END IF
+    PRINT "both done"
+END FUNCTION
+```
+
+The two `task ... holds the lock` lines appear in either order, because the tasks run concurrently; `both done` is always last, because `Join` waits for every ticket. A mutex is not re-entrant, and a task that ends while holding one releases it.
+
+## Bounds
+
+To prevent resource exhaustion and unbounded waits:
+
+* a concurrent queue has 1 through 64 workers;
+* a queue holds at most 1024 pending tickets (more is `Dispatch.SATURATED`);
+* every timeout is 1 through 60,000 milliseconds; an `AWAIT` timeout written as a literal outside that range is the compile-time error `AWAIT_TIMEOUT`;
+* a wait that runs past its timeout returns an `Error` with `Code` `Dispatch.TIMEOUT`.
+
+The classes, their members, and the error codes are listed in [Appendix M](appendix_m_bndispatch.md).
+
+## Diagnostics Introduced in This Chapter
+
+| Diagnostic | Raised when |
+| --- | --- |
+| `AWAIT_TIMEOUT` | An `AWAIT` timeout literal is outside 1 through 60,000 milliseconds. |
+| `TYPE_MISMATCH` | A task parameter or result has a type a task cannot carry. |
+
+## Summary
+
+* Concurrency is a module, `BNDispatch`, not a language feature; there are no threads and no shared mutable state.
+* `ASYNC queue Fn(args)` submits a named `ASYNC FUNCTION` and returns a ticket; `AWAIT ticket(ms)` yields its `T OR Error`.
+* Tasks coordinate only through `BNDispatch` objects passed as arguments.
+* Every bound is explicit, and every wait has a timeout.
+
+---
+
+[Next: Debugging and Profiling →](16_debugging_and_profiling.md)

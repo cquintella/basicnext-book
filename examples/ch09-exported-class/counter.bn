@@ -1,0 +1,9 @@
+// Companion file for the Basic Next Book. License: MPL-2.0.
+EXPORT CLASS Counter
+    PUBLIC FUNCTION CONSTRUCTOR()
+    END FUNCTION
+
+    PUBLIC FUNCTION Twice(x AS INTEGER) AS INTEGER
+        RETURN 2 * x
+    END FUNCTION
+END CLASS

@@ -1,0 +1,11 @@
+// Companion file for the Basic Next Book. License: MPL-2.0.
+EXPORT CONST Sides = 4
+
+EXPORT FUNCTION Square(x AS INTEGER) AS INTEGER
+    RETURN x * x
+END FUNCTION
+
+FUNCTION Helper() AS INTEGER
+    // Not exported: only shapes.bn can call it.
+    RETURN 1
+END FUNCTION

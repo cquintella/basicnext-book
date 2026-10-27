@@ -1,0 +1,6 @@
+// Companion file for the Basic Next Book. License: MPL-2.0.
+IMPORT MathUtils AS Math
+
+FUNCTION Start() AS VOID
+    PRINT Math.Square(5)
+END FUNCTION

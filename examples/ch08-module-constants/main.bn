@@ -1,0 +1,6 @@
+// Companion file for the Basic Next Book. License: MPL-2.0.
+IMPORT Limits AS L
+
+FUNCTION Start() AS VOID
+    PRINT L.PI, L.MIN_LEVEL
+END FUNCTION

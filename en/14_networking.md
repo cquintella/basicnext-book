@@ -1,0 +1,247 @@
+# Networking
+
+[← Previous: Files](13_files.md) · [Contents](toc.md)
+
+Network access is provided by the host capability `HOST.Net`, imported like the others ([chapter 12](12_host.md)). It supports IPv4 and IPv6 addressing, system DNS resolution, TCP, UDP, and bounded ICMP Echo. The operating system owns the underlying network stack.
+
+```basic
+IMPORT HOST.Net AS Net
+```
+
+## `HOST.Net`
+
+Networking is typed: an `Address` is parsed and validated before it can be used, an `Endpoint` pairs an address with a port, and every operation that waits takes a timeout in milliseconds. No example below needs the Internet.
+
+**Addresses, networks, and name resolution.** `Net.Address.Parse` accepts IPv4 and IPv6 text and rejects host names; `Net.Resolve` is the only operation that turns a name into addresses.
+
+```basic
+IMPORT HOST.Net AS Net
+
+FUNCTION Describe(text AS STRING) AS VOID
+    LET address AS Net.Address OR Error = Net.Address.Parse(text)
+    IF address IS Error THEN
+        PRINT text, "is not an address:", address.Message
+    ELSE
+        PRINT address.ToString(), "loopback:", address.IsLoopback(), "private:", address.IsPrivate()
+    END IF
+END FUNCTION
+
+FUNCTION Start() AS INTEGER
+    Describe("127.0.0.1")
+    Describe("192.168.10.7")
+    Describe("::1")
+    Describe("example.com")
+
+    LET lan AS Net.CIDR OR Error = Net.CIDR.Parse("192.168.10.0/24")
+    LET host AS Net.Address OR Error = Net.Address.Parse("192.168.10.7")
+    IF lan IS Error OR host IS Error THEN
+        PRINT "parse failed"
+        RETURN 1
+    END IF
+    PRINT "prefix:", lan.PrefixLength(), "contains 192.168.10.7:", lan.Contains(host)
+
+    LET found AS Net.Addresses OR Error = Net.Resolve("localhost", 2000)
+    IF found IS Error THEN
+        PRINT "resolve failed:", found.Message
+        RETURN 1
+    END IF
+    FOR i AS INTEGER = 0 TO found.Count() - 1
+        LET item AS Net.Address OR Error = found.Get(i)
+        IF item IS Error THEN
+            PRINT "entry", i, "failed:", item.Message
+        ELSE
+            PRINT "localhost ->", item.ToString()
+        END IF
+    END FOR
+    RETURN 0
+END FUNCTION
+```
+
+```
+127.0.0.1 loopback: TRUE private: FALSE
+192.168.10.7 loopback: FALSE private: TRUE
+::1 loopback: TRUE private: FALSE
+example.com is not an address: cannot parse "example.com" as an IP address
+prefix: 24 contains 192.168.10.7: TRUE
+localhost -> ::1
+localhost -> 127.0.0.1
+```
+
+`Resolve` returns an `Addresses` collection in the system's order, read with `Count()` and `Get(i)`.
+
+`CIDR.Parse` is as strict as `Address.Parse`. The prefix is plain decimal (`/8`, not `/08` or `/+8`), and the address must be the network address: `10.0.0.1/8` is an `Error` whose cause says to write `10.0.0.0/8`. A typo in an ACL or an egress list therefore fails at once instead of silently naming a different network.
+
+**TCP.** `Net.TCPListen` opens listeners on a set of endpoints, `Accept` waits for a connection, and `Net.TCPConnect` connects. `Read` and `Write` move bytes through a `POINTER TO BYTE[]` buffer; `Read` returns `EOF` when the peer has closed. This program is both server and client on the loopback interface:
+
+```basic
+IMPORT HOST.Net AS Net
+
+FUNCTION Start() AS INTEGER
+    LET loopback AS Net.Address OR Error = Net.Address.Parse("127.0.0.1")
+    IF loopback IS Error THEN
+        RETURN 1
+    END IF
+    // Port 0 asks the system for any free port.
+    LET wanted AS Net.Endpoint OR Error = Net.Endpoint.Create(loopback, 0)
+    IF wanted IS Error THEN
+        RETURN 1
+    END IF
+    LET endpoints AS Net.Endpoint[1] = [wanted]
+    LET listener AS Net.TCPListener OR Error = Net.TCPListen(endpoints, 8)
+    IF listener IS Error THEN
+        PRINT "listen failed:", listener.Message
+        RETURN 1
+    END IF
+    LET bound AS Net.Endpoint OR Error = listener.LocalEndpoint()
+    IF bound IS Error THEN
+        RETURN 1
+    END IF
+    PRINT "listening on port", bound.Port()
+
+    LET client AS Net.TCPStream OR Error = Net.TCPConnect(bound, 2000)
+    LET server AS Net.TCPStream OR Error = listener.Accept(2000)
+    IF client IS Error OR server IS Error THEN
+        PRINT "connection failed"
+        RETURN 1
+    END IF
+
+    LET message AS POINTER TO BYTE[] = NEW BYTE[2]
+    message[0] = 72    // 'H'
+    message[1] = 105   // 'i'
+    LET sent AS INTEGER OR Error = client.Write(message, 2)
+    IF sent IS Error THEN
+        PRINT "write failed:", sent.Message
+        RETURN 1
+    END IF
+
+    LET received AS POINTER TO BYTE[] = NEW BYTE[2]
+    LET count AS INTEGER OR EOF OR Error = server.Read(received, 2)
+    IF count IS INTEGER THEN
+        PRINT "server read", count, "bytes:", received[0], received[1]
+    END IF
+
+    client.Close()
+    server.Close()
+    listener.Close()
+    RELEASE message
+    RELEASE received
+    RETURN 0
+END FUNCTION
+```
+
+```
+listening on port 64483
+server read 2 bytes: 72 105
+```
+
+Port `0` asks the system for a free port; `LocalEndpoint()` reports which one was chosen.
+
+**UDP.** `Net.UDPBind` opens a socket, `SendTo` sends one datagram, and `Receive(size, timeout)` returns a `UDPPacket` that knows its source, its size, and whether it was truncated to fit:
+
+```basic
+IMPORT HOST.Net AS Net
+
+FUNCTION Start() AS INTEGER
+    LET loopback AS Net.Address OR Error = Net.Address.Parse("127.0.0.1")
+    IF loopback IS Error THEN
+        RETURN 1
+    END IF
+    LET any AS Net.Endpoint OR Error = Net.Endpoint.Create(loopback, 0)
+    IF any IS Error THEN
+        RETURN 1
+    END IF
+    LET receiver AS Net.UDPSocket OR Error = Net.UDPBind(any)
+    LET sender AS Net.UDPSocket OR Error = Net.UDPBind(any)
+    IF receiver IS Error OR sender IS Error THEN
+        PRINT "bind failed"
+        RETURN 1
+    END IF
+    LET target AS Net.Endpoint OR Error = receiver.LocalEndpoint()
+    IF target IS Error THEN
+        RETURN 1
+    END IF
+
+    LET datagram AS POINTER TO BYTE[] = NEW BYTE[3]
+    datagram[0] = 1
+    datagram[1] = 2
+    datagram[2] = 3
+    LET sent AS INTEGER OR Error = sender.SendTo(target, datagram, 3)
+    IF sent IS Error THEN
+        PRINT "send failed:", sent.Message
+        RETURN 1
+    END IF
+
+    // Receive at most 16 bytes, waiting up to 2000 ms.
+    LET packet AS Net.UDPPacket OR Error = receiver.Receive(16, 2000)
+    IF packet IS Error THEN
+        PRINT "receive failed:", packet.Message
+        RETURN 1
+    END IF
+    LET copy AS POINTER TO BYTE[] = NEW BYTE[16]
+    LET copied AS INTEGER OR Error = packet.CopyTo(copy, 16)
+    IF copied IS INTEGER THEN
+        PRINT "received", packet.Size(), "bytes, truncated:", packet.WasTruncated()
+        PRINT "payload:", copy[0], copy[1], copy[2]
+    END IF
+
+    sender.Close()
+    receiver.Close()
+    RELEASE datagram
+    RELEASE copy
+    RETURN 0
+END FUNCTION
+```
+
+```
+received 3 bytes, truncated: FALSE
+payload: 1 2 3
+```
+
+**Ping.** `Net.Ping` sends one ICMP Echo to a parsed address. Timeout, unreachable host, and missing ICMP permission are distinct errors, and a host without ICMP permission still allows every other `HOST.Net` operation.
+
+```basic
+IMPORT HOST.Net AS Net
+
+FUNCTION Start() AS INTEGER
+    LET target AS Net.Address OR Error = Net.Address.Parse("127.0.0.1")
+    IF target IS Error THEN
+        RETURN 1
+    END IF
+    LET reply AS Net.PingReply OR Error = Net.Ping(target, 1000)
+    IF reply IS Error THEN
+        // Timeout, unreachable, and missing ICMP permission are distinct errors.
+        PRINT "ping failed:", reply.Code, reply.Message
+        RETURN 1
+    END IF
+    PRINT "reply from", reply.Address().ToString(), "in", reply.RoundTripMicroseconds(), "us"
+    RETURN 0
+END FUNCTION
+```
+
+```
+reply from 127.0.0.1 in <round-trip time> us
+```
+
+## HTTP with `BNWeb`
+
+For HTTP, use the `BNWeb` module instead of raw sockets. `BNWeb` builds on `HOST.Net` to provide a bounded request and response model, routing, filters, and local HTTP/1.1, HTTP/2, and HTTPS server adapters:
+
+```basic
+IMPORT BNWeb AS Web
+```
+
+Its servers, routes, cookies, sessions, and static file serving are described in [Appendix H](appendix_h_bnweb.md).
+
+## Interpreter and Compiler Support
+
+Every example in this chapter runs under `bni run`. `bnc` compiles the TCP, UDP, `CIDR`, and `Ping` examples, and rejects the remaining network methods with `TARGET_UNSUPPORTED_HOST`: the `Address` predicates (`IsIPv4`, `IsLoopback`, …) and `TCPStream.SetTimeouts`, `ShutdownRead`, and `ShutdownWrite`. When `bnc` refuses an operation, run the program with `bni` instead.
+
+## Summary
+
+* `HOST.Net` parses and validates addresses before use, and `Net.Resolve` is the only operation that turns a name into addresses.
+* Every operation that waits takes a timeout in milliseconds and returns `T OR Error`.
+* TCP, UDP, and ICMP Echo are available directly; HTTP goes through `BNWeb`.
+
+---
+
+[Next: Concurrency →](15_concurrency.md)

@@ -1,0 +1,17 @@
+name: check-examples
+on: [push, pull_request]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      BN_VERSION: v0.6.10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch bni and the standard library
+        run: |
+          curl -fsSL -o bni "https://github.com/cquintella/BasicNext/releases/download/${BN_VERSION}/bni-linux-x86_64"
+          chmod +x bni
+          curl -fsSL "https://github.com/cquintella/BasicNext/archive/refs/tags/${BN_VERSION}.tar.gz" | tar xz
+          echo "BN_STDLIB=$PWD/$(ls -d BasicNext-*)/modules/bn" >> "$GITHUB_ENV"
+      - name: Check every complete example
+        run: BNI=$PWD/bni scripts/check-examples.sh

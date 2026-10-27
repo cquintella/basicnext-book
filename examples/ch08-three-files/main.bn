@@ -1,0 +1,8 @@
+// Companion file for the Basic Next Book. License: MPL-2.0.
+IMPORT report AS Report
+IMPORT shapes AS Shapes
+
+FUNCTION Start() AS VOID
+    PRINT Report.Describe(3)
+    PRINT Shapes.Sides
+END FUNCTION

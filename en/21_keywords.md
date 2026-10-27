@@ -1,17 +1,18 @@
 # Appendix A: Keywords
 
-[← Previous: Appendices](10_appendices.md) · [Contents](toc.md)
+[← Previous: Appendices](appendices.md) · [Contents](toc.md)
 
-This appendix is the reading manual for every reserved word. A command entry opens with the form you write, then says what that form does. Words that are not commands state only their role. The normative registry, including which spellings exist and which diagnostic a collision produces, is [`keywords.md`](../../../language/0.6/keywords.md). Grammar is [`0.6.ebnf`](../../../language/0.6/0.6.ebnf); behaviour is [`0.6.md`](../../../language/0.6/0.6.md).
+This appendix is the reading manual for every reserved word. A command entry opens with the form you write, then says what that form does. Words that are not commands state only their role. The normative registry, including which spellings exist and which diagnostic a collision produces, is [`keywords.md`](https://github.com/cquintella/BasicNext/blob/v0.6.10/language/0.6/keywords.md). Grammar is [`0.6.ebnf`](https://github.com/cquintella/BasicNext/blob/v0.6.10/language/0.6/0.6.ebnf); behaviour is [`0.6.md`](https://github.com/cquintella/BasicNext/blob/v0.6.10/language/0.6/0.6.md).
 
 In a form, a word in uppercase is written as shown. A lowercase word is a placeholder you replace. Square brackets mark an optional part. An ellipsis repeats the preceding part. A form is the shape of the command, not a whole program.
 
 When the grammar places two reserved words together, they are one construct and one entry here. `END FUNCTION` closes a function. It is not the entry for `END` followed by the entry for `FUNCTION`. The same rule covers `END IF`, `END FOR`, `END WHILE`, `END REPEAT`, `END CLASS`, `END STRUCT`, `END INTERFACE`, `ELSE IF`, `FOR EACH`, `EXIT FOR`, `EXIT WHILE`, `EXIT REPEAT`, `CONTINUE FOR`, `CONTINUE WHILE`, `CONTINUE REPEAT`, `POINTER TO`, `ASYNC FUNCTION`, `FUNCTION CONSTRUCTOR`, `FUNCTION DESTRUCTOR`, `EXPORT IMPORT`, and `AS WEAK`. Each half stays reserved, so neither word can be a name.
 
-A keyword in a program is written in uppercase: `FOR`, `IF`, `WHILE`. The same letters in any other ASCII case (`for`, `For`, `fOR`) are a reserved identifier. A reserved identifier cannot name a binding, a constant, a function, a class, a struct, an interface, or a member. That collision is `RESERVED_IDENTIFIER`.
+A keyword in a program is written in uppercase: `FOR`, `IF`, `WHILE`. The specification makes the same letters in any other ASCII case (`for`, `For`, `fOR`) a reserved identifier, which may not name a binding, a constant, a function, a class, a struct, an interface, or a member, and assigns that collision the diagnostic `RESERVED_IDENTIFIER`. The 0.6.10 toolchain does not yet enforce this: such names compile. Avoid them by convention.
 
 Writing the uppercase keyword where a name belongs is a syntax error. `bni check` reports it before any later analysis:
 
+<!-- bn-check: expect-error -->
 ```basic
 FUNCTION Start() AS VOID
     LET FOR AS INTEGER = 1
@@ -29,7 +30,7 @@ error[E0100]: Syntax error: Expected binding name.
   = help: compare the line with the construct's syntax in the language reference; an earlier unclosed block or a misspelled keyword is a common origin
 ```
 
-`INF` and `NAN` are floating-point literals, tested with `IS INF`, `IS -INF`, and `IS NAN`. They are not reserved words. `++` and `--` are operators, not reserved words. `TYPEOF` is a built-in function, taught in [chapter 2](02_common_programming_concepts.md). `DELETE` is an ordinary identifier. `OPEN`, `CLOSE`, `READ`, and `WRITE` are not keywords; files go through `HOST.FileSystem`. `CLS`, `BEEP`, and `PRINTAT` are not keywords; console operations are methods on `HOST.Console`.
+`INF` and `NAN` are floating-point literals, tested with `IS INF`, `IS -INF`, and `IS NAN`. They are not reserved words. `++` and `--` are operators, not reserved words. `TYPEOF` is a built-in function, taught in [chapter 2](02_values_types_and_variables.md). `DELETE` is an ordinary identifier. `OPEN`, `CLOSE`, `READ`, and `WRITE` are not keywords; files go through `HOST.FileSystem`. `CLS`, `BEEP`, and `PRINTAT` are not keywords; console operations are methods on `HOST.Console`.
 
 The shortest program that uses a binding and a condition:
 
@@ -52,7 +53,7 @@ END FUNCTION
 
 `LET [name [AS Type], …] = expression`
 
-`LET` declares a binding: a local, a field, or a parameter's sibling in a declaration list. The type follows `AS` and stays fixed for the life of the binding. An initializer is optional; when it is absent the binding takes the default of its type. Several names of one type may share a statement, each with its own initializer. The bracket form binds several names from one vector or one `STRUCT`. A vector fills the names by position, from the first element. A `STRUCT` fills each name from the field of that same name. `AS` on a name inside the brackets is optional. Taught in [chapter 2](02_common_programming_concepts.md).
+`LET` declares a binding: a local, a field, or a parameter's sibling in a declaration list. The type follows `AS` and stays fixed for the life of the binding. An initializer is optional; when it is absent the binding takes the default of its type. Several names of one type may share a statement, each with its own initializer. The bracket form binds several names from one vector or one `STRUCT`. A vector fills the names by position, from the first element. A `STRUCT` fills each name from the field of that same name. `AS` on a name inside the brackets is optional. Taught in [chapter 2](02_values_types_and_variables.md); destructuring in [chapter 6](06_vectors_strings_and_structs.md).
 
 ### CONST
 
@@ -76,7 +77,7 @@ END FUNCTION
 
 ## Types
 
-`INTEGER` is the default signed integer and the same type as `INT32`. `FLOAT` is the default floating-point type and the same type as `FLOAT64`. A counted `FOR` without `AS` uses `INTEGER`. Two integer types of the same signedness combine to the wider one. `BYTE` with a signed type widens to at least `INT16`. Any other mix of a signed type and an unsigned type is `TYPE_MISMATCH`. `FLOAT32` with `FLOAT64` gives `FLOAT64`. Widths and defaults are taught in [chapter 2](02_common_programming_concepts.md).
+`INTEGER` is the default signed integer and the same type as `INT32`. `FLOAT` is the default floating-point type and the same type as `FLOAT64`. A counted `FOR` without `AS` uses `INTEGER`. Two integer types of the same signedness combine to the wider one. `BYTE` with a signed type widens to at least `INT16`. Any other mix of a signed type and an unsigned type is `TYPE_MISMATCH`. `FLOAT32` with `FLOAT64` gives `FLOAT64`. Widths and defaults are taught in [chapter 2](02_values_types_and_variables.md).
 
 ### BOOLEAN
 
@@ -88,7 +89,7 @@ END FUNCTION
 
 ### DATE
 
-`DATE` is a calendar date. An uninitialized `DATE` is 1970-01-01. It is distinct from `TIME`, `TIMESTAMP`, and `TIMEZONE`. Reading the clock and converting these values is `HOST.Clock` and the temporal operations in [chapter 8](08_standard_library_and_host.md).
+`DATE` is a calendar date. An uninitialized `DATE` is 1970-01-01. It is distinct from `TIME`, `TIMESTAMP`, and `TIMEZONE`. Reading the clock and converting these values is `HOST.Clock` and the temporal operations in [chapters 12](12_host.md) and [11](11_standard_library.md).
 
 ### FLOAT
 
@@ -156,7 +157,7 @@ END FUNCTION
 
 ## Values inside an alternative
 
-`NULL`, `NA`, and `EOF` exist only as a member of an alternative type. `x = NULL` and `x IS NULL` agree, and the same for `NA` and `EOF`. `PRINT` writes the words `NULL`, `NA`, and `EOF`. `AS BOOLEAN` of each is `FALSE`. Alternatives are taught in [chapter 4](04_compound_data.md).
+`NULL`, `NA`, and `EOF` exist only as a member of an alternative type. `x = NULL` and `x IS NULL` agree, and the same for `NA` and `EOF`. `PRINT` writes the words `NULL`, `NA`, and `EOF`. `AS BOOLEAN` of each is `FALSE`. Alternatives are taught in [chapter 7](07_alternatives_and_errors.md).
 
 ### NULL
 
@@ -180,7 +181,7 @@ END FUNCTION
 
 ## Operators written as words
 
-Precedence, loosest first, is `OR`, `XOR`, `AND`, `IS`, the comparisons, `SHL` and `SHR`, then `+` and `-`, then `*` `/` `DIV` `%`, then unary `NOT`. On `BOOLEAN`, `AND` and `OR` skip the right operand when the left operand already decides the result. `XOR` evaluates both sides. On integers the same four words are bitwise: `5 XOR 3` is `6`, and `NOT 0` is `-1`. Taught in [chapter 2](02_common_programming_concepts.md).
+Precedence, loosest first, is `OR`, `XOR`, `AND`, `IS`, the comparisons, `SHL` and `SHR`, then `+` and `-`, then `*` `/` `DIV` `%`, then unary `NOT`. On `BOOLEAN`, `AND` and `OR` skip the right operand when the left operand already decides the result. `XOR` evaluates both sides. On integers the same four words are bitwise: `5 XOR 3` is `6`, and `NOT 0` is `-1`. Taught in [chapter 3](03_operators_and_conversions.md).
 
 ### AND
 
@@ -212,11 +213,11 @@ Precedence, loosest first, is `OR`, `XOR`, `AND`, `IS`, the comparisons, `SHL` a
 
 ### IS
 
-`IS` tests a member of an alternative and narrows the value in that branch: `x IS INTEGER`, `x IS NULL`, `x IS NA`, `x IS EOF`, `x IS Error`. On a floating-point value, `IS NAN`, `IS INF`, and `IS -INF` are the tests; `NAN` compares equal to nothing, itself included. `IS POINTER TO T` tests a pointer. Narrowing is taught in [chapter 3](03_control_flow.md).
+`IS` tests a member of an alternative and narrows the value in that branch: `x IS INTEGER`, `x IS NULL`, `x IS NA`, `x IS EOF`, `x IS Error`. On a floating-point value, `IS NAN`, `IS INF`, and `IS -INF` are the tests; `NAN` compares equal to nothing, itself included. `IS POINTER TO T` tests a pointer. Narrowing is taught in [chapter 7](07_alternatives_and_errors.md).
 
 ## Decisions and loops
 
-Conditions are `BOOLEAN`. The forms are taught in [chapter 3](03_control_flow.md).
+Conditions are `BOOLEAN`. The forms are taught in [chapter 4](04_control_flow.md).
 
 ### IF
 
@@ -481,7 +482,7 @@ END FOR
 
 ## Functions and modules
 
-A module is one file. There are no top-level statements. The entry point is a parameterless function named `Start`. Modules are taught in [chapter 5](05_functions_and_program_structure.md).
+A module is one file. There are no top-level statements. The entry point is a parameterless function named `Start`. Functions are taught in [chapter 5](05_functions.md), modules in [chapter 8](08_modules.md).
 
 ### FUNCTION
 
@@ -531,11 +532,11 @@ END FUNCTION
 
 `IMPORT HOST.Capability AS Alias`
 
-`HOST` is the built-in capability object. `HOST.Args` needs no `IMPORT`. Every other capability is named with `IMPORT HOST.… AS Alias`. `HOST` itself is not re-exported by `EXPORT IMPORT`. The capabilities are taught in [chapter 8](08_standard_library_and_host.md).
+`HOST` is the built-in capability object. `HOST.Args` needs no `IMPORT`. Every other capability is named with `IMPORT HOST.… AS Alias`. `HOST` itself is not re-exported by `EXPORT IMPORT`. The capabilities are taught in [chapter 12](12_host.md).
 
 ## Classes, structs, and interfaces
 
-`CLASS` is a reference type under ARC. `STRUCT` is a value copied on assignment. `INTERFACE` is a contract. The three are taught in [chapter 6](06_object_oriented_features.md). Memory is taught in [chapter 7](07_memory_management.md).
+`CLASS` is a reference type under ARC. `STRUCT` is a value copied on assignment. `INTERFACE` is a contract. The three are taught in [chapter 9](09_classes_and_interfaces.md). Memory is taught in [chapter 10](10_memory.md).
 
 ### CLASS
 
@@ -649,7 +650,7 @@ END FUNCTION
 
 ### ASYNC FUNCTION
 
-`ASYNC FUNCTION` is one construct. `ASYNC FUNCTION Name(...) AS T OR Error` declares a task function. The result types are `VOID`, `INTEGER`, `FLOAT`, `STRING`, and `BOOLEAN`, each as `T OR Error`. The body closes with `END FUNCTION`. See [chapter 9](09_io_and_concurrency.md) and [Appendix J](16_bndispatch.md).
+`ASYNC FUNCTION` is one construct. `ASYNC FUNCTION Name(...) AS T OR Error` declares a task function. The result types are `VOID`, `INTEGER`, `FLOAT`, `STRING`, and `BOOLEAN`, each as `T OR Error`. The body closes with `END FUNCTION`. See [chapter 15](15_concurrency.md) and [Appendix M](appendix_m_bndispatch.md).
 
 ### ASYNC
 
@@ -673,7 +674,7 @@ END FUNCTION
 
 These are the codes named above, in the form `bni check` and `bni run` use.
 
-A keyword written where a name belongs is a syntax error, `E0100`, as in the `LET FOR` program at the top of this appendix. Any other letter case of a reserved word used as a name is `RESERVED_IDENTIFIER`.
+A keyword written where a name belongs is a syntax error, `E0100`, as in the `LET FOR` program at the top of this appendix. Any other letter case of a reserved word used as a name is specified as `RESERVED_IDENTIFIER`, but 0.6.10 accepts it.
 
 A condition that is not `BOOLEAN`, a mix of signed and unsigned integers other than `BYTE` with a signed type, an integer mixed with a float, a constant or a `STEP 0` literal that does not fit, and a `SIZEOF` of a pointer, object, interface, `TIMEZONE`, function value, or alternative are `TYPE_MISMATCH`.
 
@@ -683,4 +684,4 @@ A condition that is not `BOOLEAN`, a mix of signed and unsigned integers other t
 
 ---
 
-[Next: Appendix E: BNJson →](11_bnjson.md)
+[Next: Appendix E: External Module Conventions →](appendix_e_external_modules.md)

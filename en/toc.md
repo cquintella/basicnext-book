@@ -1,104 +1,162 @@
 # The Basic Next Programming Language
 
+Official website: [http://basicnext.org](http://basicnext.org)
+
+This edition teaches the 0.6 line of Basic Next and is checked against the 0.6.10 toolchain.
+
 ## [Preface](00_preface.md)
-- The problem the language addresses
-- The design decisions and what each one costs
-- What was borrowed, and what the language does not have
-- How this book is organized
+- The Problem the Language Addresses
+- What the Decisions Are
+- What Was Borrowed
+- What the Language Does Not Have
+- Why the Language Is Taught in This Book
+- Where the Language Fits
+- How This Book Is Organized
+- References
 
-## 1. [Introduction](01_introduction.md)
-- What Basic Next is, and who it is for
-- Design principles
-- Installing the toolchain
-- The `bni` commands (`check`, `run`, `eval`, `lex`, `lsp`, `dap`) and `bnc`
-- A first program, interpreted and compiled
-- Modules and the entry point (`Start`, `EXPORT`, `IMPORT`, `STATIC` state)
-- Reading a diagnostic
-- Editor and notebook integration
+## Part I — Getting Started
 
-## 2. [Common Programming Concepts](02_common_programming_concepts.md)
+### 1. [Getting Started](01_getting_started.md)
+- Installing the Toolchain
+- A First Program
+- Syntax Conventions
+- Interpreter and Compiler
+- Toolchain Commands
+- Reading a Diagnostic
+- Configuring Your Editor
+
+## Part II — The Procedural Language
+
+### 2. [Values, Types and Variables](02_values_types_and_variables.md)
 - Comments
-- Variables (`LET`), defaults, and alternative-typed bindings
-- Constants (`CONST`) and literal inference
-- Type inspection (`TYPEOF`)
-- Primitive types: numeric widths and overflow, `BOOLEAN`, `STRING`, temporal
-- Operators: arithmetic, the three divisions, comparison, logical and bitwise
-- Explicit conversion (`AS`) and numeric limits (`BNMath`)
-- Console input and output (`PRINT`, `INPUT`, `HOST.Console`)
-- Choosing types deliberately
+- Variables
+- Constants
+- Inspecting a Type
+- Primitive Types
+- Literals
+- Writing Output: `PRINT`
+- Choosing Types Deliberately
 
-## 3. [Control Flow](03_control_flow.md)
-- Boolean-only conditions
-- Block `IF`, chained alternatives, and the single-line form
-- Guard clauses instead of nesting
-- Narrowing an alternative type (`IS`)
-- Pre-condition and post-condition loops (`WHILE`, `REPEAT ... UNTIL`)
-- Counted and collection iteration (`FOR`, `FOR EACH`)
-- Leaving and skipping iterations (`EXIT`, `CONTINUE`)
-- Loops and return analysis
-- Halting the program (`STOP`) and a worked example
+### 3. [Operators and Conversions](03_operators_and_conversions.md)
+- Operators and Expressions
+- Compound Assignment, Increment and Decrement
+- Explicit Conversion
 
-## 4. [Compound Data and Error Handling](04_compound_data.md)
+### 4. [Control Flow](04_control_flow.md)
+- Conditions Are Boolean
+- The Block `IF`
+- The Single-Line `IF`
+- Pre-Condition Loops: `WHILE`
+- Post-Condition Loops: `REPEAT ... UNTIL`
+- Counted Loops: `FOR`
+- Loop Control: `EXIT` and `CONTINUE`
+- Terminating Execution: `STOP`
+- Worked Example
+
+### 5. [Functions](05_functions.md)
+- Function Declarations
+- Parameters Are Constant
+- Guard Clauses Instead of Nesting
+- Return Analysis
+- The Exit Status of `Start`
+- Function Values
+
+### 6. [Vectors, Strings and Structs](06_vectors_strings_and_structs.md)
 - Fixed-Size Vectors
+- Iterating over a Vector
+- Measuring: `LEN` and `SIZEOF`
+- Strings as Sequences
 - Value Types (`STRUCT`)
 - Destructuring a vector or a `STRUCT`
-- String Indexing
-- Alternative Types and Absence (`OR`, `IS`, `NULL`, `NA`, `EOF`)
-- Error Values (The `Error` object)
+- Worked Example
 
-## 5. [Functions and Program Structure](05_functions_and_program_structure.md)
-- Function Declarations and Return Analysis
-- Function Values
-- Modules: programs in several files
-- What crosses the boundary (`EXPORT`)
-- Writing an `IMPORT` (paths, aliases, letter case, qualified imports)
-- The module search path (`--module-path`, `config.toml`, `BN_HOME`)
-- Cycles and diagnostics
+### 7. [Absence, Alternatives and Errors](07_alternatives_and_errors.md)
+- Alternative Types
+- `NULL`, `NA`, and `EOF`
+- Testing and Narrowing with `IS`
+- Reading Input
+- Errors
 
-## 6. [Object-Oriented Features](06_object_oriented_features.md)
+### 8. [Modules](08_modules.md)
+- Two Files
+- A Program in Three Files
+- What Crosses the Boundary: `EXPORT`
+- Writing an `IMPORT`
+- The Standard Library and the Host
+- Where the Toolchain Looks: the Module Search Path
+- Cycles
+
+## Part III — Objects and Memory
+
+### 9. [Classes and Interfaces](09_classes_and_interfaces.md)
 - Reference Types (`CLASS`)
-- Visibility (`PRIVATE`, `PUBLIC`) and `STATIC` Members
+- Visibility and `SELF`
 - Constructors and Destructors
+- Static Members
 - Inheritance
 - Contracts (`INTERFACE` and `IMPLEMENTS`)
+- Exporting a Class
 
-## 7. [Memory Management](07_memory_management.md)
-- Memory Management (ARC, when objects are released, constant parameters, `RELEASE`, pointers)
-- Pointers (`POINTER TO TYPE`, array pointers)
-- Memory Safety and Runtime Errors
+### 10. [Memory](10_memory.md)
+- Strong references and destructors
+- When an object is released
+- Parameters keep the argument alive
+- Weak references
+- `RELEASE`
+- Regions and pointers
 
-## 8. [Standard Library and HOST](08_standard_library_and_host.md)
-- The external module boundary
-- HOST capabilities (`HOST.Args`, `HOST.Clock`, `HOST.Console`, `HOST.Random`, `HOST.FileSystem`, `HOST.Exec`, `HOST.Env`)
-- Temporal Data (`TIMESTAMP`, `DATE`, `TIME`, `TIMEZONE`)
-- Built-ins (`LEN`, `SIZEOF`)
+## Part IV — Programs in the Real World
 
-## 9. [I/O and Concurrency](09_io_and_concurrency.md)
-- Synchronous, Bounded I/O (`HOST.FileSystem`, `HOST.Net`, `BNWeb`)
-- Concurrency and Parallelism (`BNDispatch`)
-- Constraints and Resource Management
+### 11. [The Standard Library](11_standard_library.md)
+- `BNMath`
+- `BNString`
+- `BNPallet`
+- Dates and Times
+- Other Modules
 
-## 10. [Architecture and Execution Policy](17_architecture.md)
-- Unrestricted and sandboxed filesystem profiles
-- Artifact ceilings and execution-time restrictions
-- Runtime authorization and target support
-- Sandboxed path handling and policy precedence
+### 12. [The HOST](12_host.md)
+- Capabilities
 
-## [Appendices](10_appendices.md)
+### 13. [Files](13_files.md)
+- Text Files
+- Binary Files
+- Restricting File Access: the Sandbox
+
+### 14. [Networking](14_networking.md)
+- `HOST.Net`
+- HTTP with `BNWeb`
+- Interpreter and Compiler Support
+
+### 15. [Concurrency](15_concurrency.md)
+- Tasks, Queues, and Tickets
+- Coordinating Tasks
+- Bounds
+
+### 16. [Debugging and Profiling](16_debugging_and_profiling.md)
+- How `bni dap` Works
+- Visual Studio Code Integration
+- Neovim Integration (`nvim-dap`)
+- Classic Vim Integration (`vimspector`)
+- Helix Integration
+- Debugging Compiled Native Binaries (`bnc`)
+- Inspecting Reference Counts (ARC)
+- Execution Tracing and Profiling (`bni run`)
+- Best Practices for Debugging
+
+## [Appendices](appendices.md)
 - Appendix A: [Keywords](21_keywords.md)
-- Appendix B: Language Diagnostics
-- Appendix C: Accepted Syntax — see the normative [0.6 EBNF](../../../language/0.6/0.6.ebnf)
-- Appendix D: `bni` and `bnc`
-- Appendix E: [`BNJson`](11_bnjson.md)
-- Appendix F: [`BNLog`](12_bnlog.md)
-- Appendix G: [`BNWeb`](13_bnweb.md)
-- Appendix H: [`BNData`](14_bndata.md)
-- Appendix I: [External module conventions](15_external_modules.md)
-- Appendix J: [`BNDispatch`](16_bndispatch.md)
-- Appendix K: [`BNCrypto`](18_bncrypto.md)
-- Appendix L: [`BNSqlite`](19_bnsqlite.md)
-- Appendix M: [Debugging Basic Next (`bni dap`)](20_debugging.md)
-- Appendix N: [`BNFfi` (C Foreign Function Interface)](22_bnffi.md)
+- Appendix B: [Language Diagnostics](appendices.md#appendix-b-language-diagnostics)
+- Appendix C: [Accepted Syntax (EBNF)](appendices.md#appendix-c-accepted-syntax-ebnf)
+- Appendix D: [`bni` and `bnc`](appendices.md#appendix-d-bni-and-bnc)
+- Appendix E: [External Module Conventions](appendix_e_external_modules.md)
+- Appendix F: [`BNJson`](appendix_f_bnjson.md)
+- Appendix G: [`BNLog`](appendix_g_bnlog.md)
+- Appendix H: [`BNWeb`](appendix_h_bnweb.md)
+- Appendix I: [`BNData`](appendix_i_bndata.md)
+- Appendix J: [`BNSqlite`](appendix_j_bnsqlite.md)
+- Appendix K: [`BNCrypto`](appendix_k_bncrypto.md)
+- Appendix L: [`BNFfi` (C Foreign Function Interface)](appendix_l_bnffi.md)
+- Appendix M: [`BNDispatch`](appendix_m_bndispatch.md)
 
 ---
 

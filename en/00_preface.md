@@ -2,9 +2,9 @@
 
 [Contents](toc.md)
 
-> My name is Carlos Alvaro Quintella, and Basic Next our (mine and yours) programming language, I maily started this work because of a problem I could describe precisely but could not solve by changing tools. Over a career that I've spent in systems architecture, IT infrastructure, Information Security and teaching, along the years, I watched the distance grow between having an idea and having the program to run it. The distance is not made of algorithms. It is made of building, configurating, lerning frameworks, programming conventions and of course different language details, that I had to have it remembered rather than junst learned. not counting decrypting  error messages that didn't helped much solving the problem.
+> My name is Carlos Alvaro Quintella, and Basic Next is our (mine and yours) programming language. I started this work mainly because of a problem I could describe precisely but could not solve by changing tools. Over a career spent in systems architecture, IT infrastructure, information security, and teaching, I watched the distance grow between having an idea and having a program that runs it. The distance is not made of algorithms. It is made of building, configuring, learning frameworks and programming conventions, and of language details I had to remember rather than simply learn — not counting error messages that did little to help solve the problem.
 
-With this preface I explains the reasoning that produced the language, states what it does and does what it doesn't do, and describes how the rest of the book is organized.
+In this preface I explain the reasoning that produced the language, state what it does and what it does not do, and describe how the rest of the book is organized. Language resources, community announcements, and toolchain releases are hosted at the official website, [http://basicnext.org](http://basicnext.org).
 
 ## The Problem the Language Addresses
 
@@ -34,13 +34,13 @@ These decisions have a common shape. Each one moves a class of error from runtim
 
 The syntax is deliberately familiar, and the sources are specific rather than personal.
 
-From BASIC comes the keyword vocabulary and the statement shapes — `LET`, `PRINT`, `FOR ... NEXT` rendered as `FOR ... END FOR` (I should have been NEXT, but END FOR is more coherent with the language). Basic were designed at Dartmouth for students who were not specialists and which remain readable for the same reason (Kemeny and Kurtz, 1964). From Pascal comes the discipline of declaring before use and the structured-programming posture that a block has one entry and one exit (Wirth, 1971). From C comes the small core and the willingness to expose the machine: pointers, fixed-width integers, and a defined memory layout, but written without C's declarator syntax. From C++ comes the class model used for organizing state and behaviour, restricted to single inheritance with interfaces. From R comes the treatment of vectors as first-class values for numerical work.
+From BASIC comes the keyword vocabulary and the statement shapes — `LET`, `PRINT`, `FOR ... NEXT` rendered as `FOR ... END FOR` (it could have stayed `NEXT`, but `END FOR` is coherent with every other block of the language). BASIC was designed at Dartmouth for students who were not specialists, and it remains readable for the same reason (Kemeny and Kurtz, 1964). From Pascal comes the discipline of declaring before use and the structured-programming posture that a block has one entry and one exit (Wirth, 1971). From C comes the small core and the willingness to expose the machine: pointers, fixed-width integers, and a defined memory layout, but written without C's declarator syntax. From C++ comes the class model used for organizing state and behaviour, restricted to single inheritance with interfaces. From R comes the treatment of vectors as first-class values for numerical work.
 
 Two omissions are equally deliberate. Implicit typing was not taken from Python, because a type that is inferred at the point of use is a type that must be reconstructed by every subsequent reader. The layered abstraction culture of enterprise Java was not taken either, because the ceremony required to express a small program in it is accidental difficulty by Brooks's definition.
 
 ## What the Language Does Not Have
 
-A language is defined as much by its exclusions, and stating them early is more useful than discovering them in chapter nine. As of version 0.6, Basic Next has no lambdas or closures, no generic classes, no variable-size collections (yet) in the core language, no string interpolation, no package registry, and no foreign function interface to C (yet). Function values exist but are restricted to module-level functions and static methods. Compilation to native code covers a typed subset of the language, and a program outside that subset is rejected before emission with a diagnostic that names the reason rather than being compiled into something that behaves differently.
+A language is defined as much by its exclusions, and stating them early is more useful than discovering them in chapter nine. As of version 0.6, Basic Next has no lambdas or closures, no generic classes, no variable-size collections (yet) in the core language, no string interpolation, and no package registry. C libraries are reached only through the `BNFfi` module, never through syntax of the language. Function values exist but are restricted to module-level functions and static methods. Compilation to native code covers a typed subset of the language, and a program outside that subset is rejected before emission with a diagnostic that names the reason rather than being compiled into something that behaves differently.
 
 Some of these are scheduled and some are decided against. The normative statement of scope is the language specification, not this book; where the two disagree, the specification governs.
 
@@ -50,11 +50,29 @@ Basic Next was designed with a second audience in mind: the student who is meeti
 
 That is why the diagnostics appear throughout this book alongside the constructs that produce them. Learning which programs a compiler rejects, and for what reason, is a substantial part of learning to write programs it accepts. Each chapter therefore states a rule, shows the message the compiler emits when the rule is broken, and then shows how to structure code so that the rule is satisfied by intent rather than by accident.
 
+## Where the Language Fits
+
+In the usual taxonomy, Basic Next is a third-generation, structured, procedural and object-oriented language. Its type system is static, strong, explicit, and nominal: types are checked before the program runs, never reinterpreted silently, written at every declaration, and matched by name rather than by shape. Memory is reclaimed by reference counting at points the program text determines, with no tracing collector. One frontend checks a program and lowers it to a validated intermediate representation; the interpreter `bni` runs that representation directly, and the compiler `bnc` turns the same representation into a native executable through LLVM.
+
+Those choices suit a particular range of programs:
+
+* command-line tools and infrastructure utilities, written and tested with `bni run` and distributed as a native binary built by `bnc`;
+* network services and daemons, with `HOST.Net`, `BNWeb`, and a filesystem sandbox the program opts into;
+* services where the pauses of a tracing collector are a concern, and resources (a socket, a file, a database lock) must be released at a known point; the language makes no hard real-time guarantee;
+* local data work with `BNData`, `BNSqlite`, and `BNJson`;
+* orchestration and safety wrappers around existing C libraries, through `BNFfi`.
+
 ## How This Book Is Organized
 
-The introduction covers the toolchain, the first program, and the shape of a module. Chapters two through five cover the constructs every program uses: variables and types, control flow, compound data and error handling, and functions and program structure. Chapters six and seven cover classes, interfaces, and the memory model. Chapter eight covers the standard library and the `HOST` boundary, chapter nine input, output, and concurrency, and chapter ten the execution policy that governs what a compiled program is permitted to do. The appendices index the keywords, the diagnostics, the normative grammar, the command-line tool, and the provider-backed modules.
+The book builds each chapter only on the chapters before it. Where an example cannot avoid a later construct, the text says so and names the chapter that explains it.
 
-Every code example in the early chapters has been executed against the reference toolchain, and the outputs shown are the outputs produced. Where a chapter quotes a diagnostic, that is the text the compiler emits.
+* **Part I, Getting Started** (chapter 1): installing the toolchain, the first program, checking, running, and compiling it, and reading a diagnostic.
+* **Part II, The Procedural Language** (chapters 2–8): values, types and variables; operators and conversions; control flow; functions; vectors, strings and structs; absence, alternative types and errors; and modules, which split a program into files and bring in the standard library.
+* **Part III, Objects and Memory** (chapters 9–10): classes and interfaces, and the reference-counting memory model.
+* **Part IV, Programs in the Real World** (chapters 11–16): the standard library, the `HOST` capabilities, files, networking, concurrency, and debugging and profiling.
+* **Appendices**: reference material — keywords, diagnostics, the normative grammar, the command-line tools, the conventions of external modules, and the contract of each `BN*` module.
+
+Every complete program in the book is checked against the reference toolchain, and the outputs shown are the outputs it produced. Where a chapter quotes a diagnostic, that is the text the compiler emits.
 
 The practices recommended alongside the language — naming a condition that expresses a rule, rejecting invalid input at the top of a function, keeping a function to one level of abstraction — are not specific to Basic Next. They come from the literature on software construction (Martin, 2008; McConnell, 2004) and hold wherever these constructs exist. The language is arranged so that following them is the path of least resistance rather than an act of discipline.
 
@@ -69,4 +87,4 @@ The practices recommended alongside the language — naming a condition that exp
 
 ---
 
-[Next: Introduction →](01_introduction.md)
+[Next: Getting Started →](01_getting_started.md)

@@ -1,0 +1,4 @@
+// Companion file for the Basic Next Book. License: MPL-2.0.
+EXPORT FUNCTION Square(n AS INTEGER) AS INTEGER
+    RETURN n * n
+END FUNCTION
