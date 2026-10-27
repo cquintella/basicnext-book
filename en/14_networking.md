@@ -2,17 +2,25 @@
 
 [← Previous: Files](13_files.md) · [Contents](toc.md)
 
-Network access is provided by the host capability `HOST.Net`, imported like the others ([chapter 12](12_host.md)). It supports IPv4 and IPv6 addressing, system DNS resolution, TCP, UDP, and bounded ICMP Echo. The operating system owns the underlying network stack.
+A program that talks to other machines needs three things from its host: a way to name the machines, a way to exchange data with them, and a way to tell when one is not answering. In Basic Next all three come from the host capability `HOST.Net`, imported like the others ([chapter 12](12_host.md)). It covers IPv4 and IPv6 addresses, name resolution through the system resolver, the two transport protocols of the Internet — TCP for reliable streams of bytes and UDP for independent datagrams — and ICMP Echo, the message behind the familiar `ping`. The protocols themselves are implemented by the operating system; `HOST.Net` gives the program typed, bounded access to them.
+
+This chapter presents each part with a complete program that runs on the loopback interface of the machine itself, so that no example needs access to the Internet. For HTTP, the protocol of the Web, the program uses the `BNWeb` module, introduced at the end of the chapter.
 
 ```basic
 IMPORT HOST.Net AS Net
 ```
 
-## `HOST.Net`
+## Design Principles
 
-Networking is typed: an `Address` is parsed and validated before it can be used, an `Endpoint` pairs an address with a port, and every operation that waits takes a timeout in milliseconds. No example below needs the Internet.
+Two rules shape the whole capability, and both exist to make network failures explicit rather than surprising.
 
-**Addresses, networks, and name resolution.** `Net.Address.Parse` accepts IPv4 and IPv6 text and rejects host names; `Net.Resolve` is the only operation that turns a name into addresses.
+**Networking is typed.** An `Address` is not a string: text is parsed and validated once, and the result is a value that can only hold a well-formed address. An `Endpoint` pairs an address with a port. A malformed address is therefore an `Error` at the point where it enters the program, not a failure several calls later in a connection attempt.
+
+**Every wait is bounded.** Each operation that may wait for the network — resolving a name, accepting or opening a connection, reading, receiving, pinging — takes a timeout in milliseconds. A program cannot hang forever on an unresponsive peer; it receives an `Error` and decides what to do.
+
+## Addresses, Networks, and Name Resolution
+
+`Net.Address.Parse` accepts IPv4 and IPv6 text and rejects host names; `Net.Resolve` is the only operation that turns a name into addresses.
 
 ```basic
 IMPORT HOST.Net AS Net
@@ -71,7 +79,9 @@ localhost -> 127.0.0.1
 
 `CIDR.Parse` is as strict as `Address.Parse`. The prefix is plain decimal (`/8`, not `/08` or `/+8`), and the address must be the network address: `10.0.0.1/8` is an `Error` whose cause says to write `10.0.0.0/8`. A typo in an ACL or an egress list therefore fails at once instead of silently naming a different network.
 
-**TCP.** `Net.TCPListen` opens listeners on a set of endpoints, `Accept` waits for a connection, and `Net.TCPConnect` connects. `Read` and `Write` move bytes through a `POINTER TO BYTE[]` buffer; `Read` returns `EOF` when the peer has closed. This program is both server and client on the loopback interface:
+## TCP: Reliable Streams
+
+TCP delivers a stream of bytes between two endpoints, in order and without loss, over a *connection* that one side opens and the other accepts. The side that accepts is conventionally the server: it *listens* on an endpoint and waits for clients. `Net.TCPListen` opens listeners on a set of endpoints, `Accept` waits for a connection, and `Net.TCPConnect` connects. `Read` and `Write` move bytes through a `POINTER TO BYTE[]` buffer; `Read` returns `EOF` when the peer has closed. This program is both server and client on the loopback interface:
 
 ```basic
 IMPORT HOST.Net AS Net
@@ -136,7 +146,9 @@ server read 2 bytes: 72 105
 
 Port `0` asks the system for a free port; `LocalEndpoint()` reports which one was chosen.
 
-**UDP.** `Net.UDPBind` opens a socket, `SendTo` sends one datagram, and `Receive(size, timeout)` returns a `UDPPacket` that knows its source, its size, and whether it was truncated to fit:
+## UDP: Independent Datagrams
+
+UDP sends self-contained messages, *datagrams*, with no connection and no guarantee of delivery or order. It suits short request-and-reply exchanges, such as name lookups or measurements, where a lost message is simply asked for again. `Net.UDPBind` opens a socket, `SendTo` sends one datagram, and `Receive(size, timeout)` returns a `UDPPacket` that knows its source, its size, and whether it was truncated to fit:
 
 ```basic
 IMPORT HOST.Net AS Net
@@ -197,7 +209,9 @@ received 3 bytes, truncated: FALSE
 payload: 1 2 3
 ```
 
-**Ping.** `Net.Ping` sends one ICMP Echo to a parsed address. Timeout, unreachable host, and missing ICMP permission are distinct errors, and a host without ICMP permission still allows every other `HOST.Net` operation.
+## ICMP Echo
+
+ICMP Echo asks a host to answer, and is the usual first test of whether a machine is reachable at all. `Net.Ping` sends one ICMP Echo to a parsed address. Timeout, unreachable host, and missing ICMP permission are distinct errors, and a host without ICMP permission still allows every other `HOST.Net` operation.
 
 ```basic
 IMPORT HOST.Net AS Net
@@ -224,7 +238,7 @@ reply from 127.0.0.1 in <round-trip time> us
 
 ## HTTP with `BNWeb`
 
-For HTTP, use the `BNWeb` module instead of raw sockets. `BNWeb` builds on `HOST.Net` to provide a bounded request and response model, routing, filters, and local HTTP/1.1, HTTP/2, and HTTPS server adapters:
+HTTP, the protocol of the Web, is a text protocol layered on TCP, and implementing it by hand on raw sockets is both laborious and easy to get subtly wrong. Programs use the `BNWeb` module instead. `BNWeb` builds on `HOST.Net` to provide a bounded request and response model, routing, filters, and local HTTP/1.1, HTTP/2, and HTTPS server adapters:
 
 ```basic
 IMPORT BNWeb AS Web
@@ -238,9 +252,7 @@ Every example in this chapter runs under `bni run`. `bnc` compiles the TCP, UDP,
 
 ## Summary
 
-* `HOST.Net` parses and validates addresses before use, and `Net.Resolve` is the only operation that turns a name into addresses.
-* Every operation that waits takes a timeout in milliseconds and returns `T OR Error`.
-* TCP, UDP, and ICMP Echo are available directly; HTTP goes through `BNWeb`.
+`HOST.Net` gives a program typed and bounded access to the network. Addresses and networks are parsed and validated before use, and `Net.Resolve` is the only operation that turns a host name into addresses. TCP provides ordered, reliable streams over connections; UDP provides independent datagrams; ICMP Echo tests reachability. Every operation that waits takes a timeout and returns `T OR Error`, so an unresponsive peer becomes an error the program handles rather than a program that hangs. HTTP is built on top of these primitives by the `BNWeb` module.
 
 ---
 

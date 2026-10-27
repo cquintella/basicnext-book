@@ -340,9 +340,9 @@ bni run --profile json app.bn
 
 ## Summary
 
-* `bni dap` serves the Debug Adapter Protocol, so VS Code, Neovim, Vim, and Helix debug a Basic Next program with breakpoints, stepping, and variable inspection.
-* `bnc -g` adds debug information for native debuggers; use `--opt none` while debugging.
-* `bni run --trace-events` records runtime events as NDJSON, and `--profile` summarizes time per function.
+Debugging in Basic Next rests on standard protocols rather than on a debugger of its own. `bni dap` serves the Debug Adapter Protocol, so VS Code, Neovim, Vim, and Helix can set breakpoints, step through a program, and inspect its variables and reference counts. A native executable built with `bnc -g` carries debug information for the platform's own debuggers, and `--opt none` keeps the generated code close to the source while debugging. For questions of behaviour and performance rather than correctness, `bni run --trace-events` records runtime events as NDJSON, and `--profile` reports how many times each function was called and where the time was spent.
+
+The appendices that follow are reference material, to be consulted rather than read in order.
 
 ---
 

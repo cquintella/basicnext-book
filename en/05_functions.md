@@ -216,12 +216,9 @@ Only functions declared at the top level of a file (and the `STATIC` methods of 
 
 ## Summary
 
-* A function states every parameter type and its return type; `VOID` means it returns nothing.
-* Parameters are constant; a changing value lives in a local.
-* Guard clauses reject special cases at the top and keep the main path unindented.
-* Every path of a non-`VOID` function must return, and the compiler does not assume a loop runs.
-* `Start` may return an `INTEGER` exit status.
-* Top-level functions are values of type `FUNCTION(...) AS ...`; there are no closures.
+A function in Basic Next states its complete contract in its first line: the type of every parameter and the type of its result, with `VOID` for none. Parameters are constant, so a value that changes during the call lives in a local, and a reader never has to ask whether a parameter still holds what the caller passed. Guard clauses deal with special cases at the top and leave the main path unindented. The compiler checks that every path of a function that returns a value does return one, without assuming that any loop runs, and `Start` may return an `INTEGER` that becomes the exit status of the process. Top-level functions are themselves values, of type `FUNCTION(...) AS ...`, and can be stored and passed; there are no closures that capture local state.
+
+So far every value has been a single number, boolean, or string. The next chapter groups values into vectors and structures.
 
 ---
 

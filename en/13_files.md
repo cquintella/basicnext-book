@@ -230,10 +230,9 @@ File operations report failures as `Error` values, not diagnostics; their codes 
 
 ## Summary
 
-* `FS.Open` returns `FS.File OR Error`; close every file you open, and check what `Close` returns.
-* A file is used for text or for bytes, never both; `ReadLine` returns `STRING OR EOF OR Error`.
-* Bytes live in a `POINTER TO BYTE[]` region.
-* `--sandbox` with `--read-root` and `--write-root` confines file access to declared directories; `BN_FS_POLICY` can only narrow it.
+Files are opened with `FS.Open`, which returns `FS.File OR Error`, and every file that is opened must be closed, because `Close` is where a failed write is finally reported. A file is used either for text, read and written in lines of UTF-8, or for bytes, moved through a `POINTER TO BYTE[]` region, but never for both; `ReadLine` returns `STRING OR EOF OR Error`, so the end of a file and a genuine failure are handled separately. By default a program has the file permissions of the process that runs it. The `--sandbox` option, with `--read-root` and `--write-root`, confines `HOST.FileSystem` to declared directories, and the environment variable `BN_FS_POLICY` can narrow that authority further when the program runs, but never widen it.
+
+The next chapter moves from the local file system to other machines.
 
 ---
 

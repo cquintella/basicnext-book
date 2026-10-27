@@ -47,6 +47,7 @@ A diagnostic either rejects the source before it runs, or stops a running progra
 | `IMPORT_CYCLE` | The imports form a cycle. | [Chapter 8](08_modules.md) |
 | `PRIVATE_ACCESS` | A `PRIVATE` member or the implicit constructor is used from outside its class. | [Chapter 9](09_classes_and_interfaces.md) |
 | `PROTECTED_ACCESS` | A `PROTECTED` member is used outside its class and subclasses. | [Chapter 9](09_classes_and_interfaces.md) |
+| `INVALID_SUPER` | A subclass constructor does not call its base constructor with `SUPER(...)`. | [Chapter 9](09_classes_and_interfaces.md) |
 | `OVERRIDE_REQUIRED` | A method overrides an inherited one without `OVERRIDE`. | [Chapter 9](09_classes_and_interfaces.md) |
 | `OVERRIDE_WITHOUT_BASE` | A method is marked `OVERRIDE`, but no ancestor declares it. | [Chapter 9](09_classes_and_interfaces.md) |
 | `INVALID_RELEASE_TARGET` | `RELEASE` names an element, a field, or a static field. | [Chapter 10](10_memory.md) |
@@ -59,6 +60,7 @@ A diagnostic either rejects the source before it runs, or stops a running progra
 | --- | --- | --- |
 | `NUMERIC_OVERFLOW` | An integer operation or conversion leaves the range of its type. | [Chapter 2](02_values_types_and_variables.md) |
 | `INDEX_OUT_OF_BOUNDS` | An index is outside a string, a vector, or a region. | [Chapter 2](02_values_types_and_variables.md) |
+| `INVALID_VECTOR_DIMENSION` | A vector dimension computed at run time is negative. | [Chapter 6](06_vectors_strings_and_structs.md) |
 | `DIVISION_BY_ZERO` | The divisor of `/`, `DIV`, or `%` is zero. | [Chapter 3](03_operators_and_conversions.md) |
 | `INVALID_NUMERIC_CONVERSION` | `NAN` or an infinity is converted to an integer type. | [Chapter 3](03_operators_and_conversions.md) |
 | `STATIC_INITIALIZATION_CYCLE` | A static field's initialization re-enters itself. | [Chapter 9](09_classes_and_interfaces.md) |

@@ -250,10 +250,9 @@ The main settings are:
 
 ## Summary
 
-* `bni check` verifies a program, `bni run` executes it, and `bnc` compiles it to a native binary; both backends run the same validated program.
-* Every program starts at `FUNCTION Start`, and every statement lives inside a function.
-* Keywords are uppercase, and every block closes with an explicit `END`.
-* A diagnostic names a stable rule code, the location, what was expected, and how to fix it.
+The toolchain gives three views of the same program. `bni check` verifies it without running it, `bni run` executes it in the reference interpreter, and `bnc` compiles it to a native executable; all three start from one validated representation, so a program the checker accepts means the same thing to both backends. Every program begins at `FUNCTION Start`, and every statement lives inside a function. Keywords are written in uppercase and every block closes with an explicit `END`, which keeps the structure of a program visible without relying on indentation. When a program breaks a rule, the diagnostic names the rule with a stable code, points to the place, and states what was expected — information the rest of the book uses to explain each rule as it is introduced.
+
+The next chapter begins the language proper, with the values a program computes and the bindings that hold them.
 
 ---
 

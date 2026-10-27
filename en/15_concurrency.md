@@ -121,10 +121,9 @@ The classes, their members, and the error codes are listed in [Appendix M](appen
 
 ## Summary
 
-* Concurrency is a module, `BNDispatch`, not a language feature; there are no threads and no shared mutable state.
-* `ASYNC queue Fn(args)` submits a named `ASYNC FUNCTION` and returns a ticket; `AWAIT ticket(ms)` yields its `T OR Error`.
-* Tasks coordinate only through `BNDispatch` objects passed as arguments.
-* Every bound is explicit, and every wait has a timeout.
+Concurrency in Basic Next is provided by a module, `BNDispatch`, rather than by the language: there are no threads and no mutable state shared between tasks. A task is a named `ASYNC FUNCTION`. `ASYNC queue Fn(args)` submits it to a queue with a fixed number of workers and returns a ticket, and `AWAIT ticket(ms)` waits for its result as `T OR Error`. Tasks run on their own copy of the program's state and coordinate only through the `BNDispatch` objects — mutexes, semaphores, groups, barriers — passed to them as arguments. Every bound, from the number of workers to the length of a queue, is explicit, and every wait has a timeout, so a stalled task produces an error instead of a stalled program.
+
+The last chapter of the book turns from writing programs to finding out why one does not behave as expected.
 
 ---
 

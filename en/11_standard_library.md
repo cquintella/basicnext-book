@@ -178,11 +178,9 @@ All of them follow the conventions of [Appendix E](appendix_e_external_modules.m
 
 ## Summary
 
-* `BN*` modules are the standard library; each is imported with an alias.
-* `BNMath` provides IEEE 754 mathematics, statistics, the numeric limits, and constants such as `Pi`.
-* `BNString` wraps text in an object with search, trimming, case conversion, and tokenizing.
-* `BNPallet` is a module of constants only.
-* Temporal values are built from text and converted between instants and local time with an explicit zone.
+The standard library consists of `BN*` modules, each imported with an alias and none available otherwise. `BNMath` provides IEEE 754 mathematics, descriptive statistics, the limits of the numeric types, and constants such as `Pi`, with results that are identical under the interpreter and the compiler. `BNString` wraps text in an object with operations for searching, trimming, case conversion, and tokenizing. `BNPallet` shows that a module may consist of constants alone. Dates and times have no literal form: they are built from their standard text forms, and every conversion between an instant and a local calendar value names its time zone explicitly. The remaining modules, from JSON to SQLite and cryptography, are documented in the appendices.
+
+The next chapter turns from libraries written in Basic Next to the capabilities that only the host can provide.
 
 ---
 

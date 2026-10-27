@@ -199,7 +199,7 @@ ls /no/such/dir returned 1
 no-such-program could not run: No such file or directory (os error 2)
 ```
 
-The captured text includes the child's own final newline. `Run` takes the argument list as a vector; a function of your own cannot take a variable-length vector, so build a fixed-size one where you call `Run`. Restricted execution policies deny `HOST.Exec` entirely.
+The captured text includes the child's own final newline. `Run` takes the argument list as a vector of `STRING`s of any length; a wrapper such as `Report` builds it where it knows the arguments. Restricted execution policies deny `HOST.Exec` entirely.
 
 ### `HOST.Env`
 
@@ -241,9 +241,9 @@ Every example in this chapter runs under `bni run`. `bnc` compiles the `Args`, `
 
 ## Summary
 
-* `HOST` is the only path to the operating system, and each capability is named in an import (except `Args`, `NumProcs`, and the optional `Console`).
-* Host operations that can fail return `T OR Error`; test `IS Error` before using the value.
-* `HOST.Args` gives the command line, `HOST.Clock` the time, `HOST.Random` reproducible pseudorandom numbers, `HOST.Exec` other programs, and `HOST.Env` the environment.
+`HOST` is the only path from a Basic Next program to the operating system, and each of its capabilities appears in the program's imports, apart from `Args`, `NumProcs`, and the optional `Console`. A reader can therefore tell from the first lines of a file what it may do to the system it runs on. Host operations that can fail return `T OR Error`, and the program tests `IS Error` before using the value. The capabilities of this chapter supply the command line (`HOST.Args`), the time (`HOST.Clock`), the processor count (`HOST.NumProcs`), screen control (`HOST.Console`), reproducible pseudorandom numbers (`HOST.Random`), other programs (`HOST.Exec`), and the environment (`HOST.Env`).
+
+The next chapter covers the capability most programs need sooner or later: files.
 
 ---
 

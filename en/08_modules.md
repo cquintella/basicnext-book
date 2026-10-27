@@ -189,11 +189,9 @@ A module may not import itself, directly or through other modules; a cycle is `I
 
 ## Summary
 
-* Every `.bn` file is a module; the entry module defines `Start`.
-* `EXPORT` makes a function, type, or constant visible to other modules; everything else stays private to its file.
-* `IMPORT path AS Alias` loads a module by its file path, letter for letter, and reaches its exports only through the alias.
-* `BN*` modules are the standard library; `HOST` capabilities reach the operating system. Both are imported the same way.
-* Every import is resolved against one ordered search path, the same for `bni` and `bnc`.
+Every `.bn` file is a module, and the module that defines `Start` is the entry point of the program. A declaration is private to its file unless it is marked `EXPORT`, which makes a function, a type, or a constant available to other modules. `IMPORT path AS Alias` loads a module by its file path, matched letter for letter on every platform, and reaches its exports only through the alias, so that two modules never collide over a name. The standard library (`BN*` modules) and the capabilities of the host (`HOST.*`) are imported with the same statement. Every import in a program is resolved against one ordered search path, identical for `bni` and `bnc`, so a program cannot load one set of modules when interpreted and another when compiled.
+
+With functions, data, and modules in place, Part II is complete. Part III introduces objects, and with them the question of how memory is managed.
 
 ---
 

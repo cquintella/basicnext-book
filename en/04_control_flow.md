@@ -331,12 +331,9 @@ longest: 9 with 19 steps
 
 ## Summary
 
-* Conditions are always explicit `BOOLEAN` expressions.
-* Block conditionals and loops close with explicit `END` keywords (`END IF`, `END WHILE`, `END REPEAT`, `END FOR`).
-* A single-line `IF` holds one simple statement per branch and has no `END IF`.
-* `WHILE` tests before each iteration, `REPEAT ... UNTIL` after; a counted `FOR` declares its own variable.
-* A loop is a scope: its variable and body bindings disappear after `END`.
-* Loop jumps name their loop (`EXIT FOR`, `CONTINUE WHILE`), and `STOP` ends the program with an exit code.
+Control flow in Basic Next is explicit in three ways. Every condition is a `BOOLEAN` expression, so the threshold a program tests is always written down. Every block, conditional or loop, closes with an `END` that names it. And every jump out of a loop names the kind of loop it leaves. Within those rules the familiar forms are available: the block and single-line `IF`, the `WHILE` loop that tests before each iteration, the `REPEAT ... UNTIL` loop that tests after it, and the counted `FOR` that declares its own variable. A loop is a scope, so its bindings disappear at its `END`, and `STOP` ends the whole program with an exit code.
+
+The examples in this chapter all lived inside `Start`. The next chapter shows how to divide a program into functions, each with its own parameters and result.
 
 ---
 

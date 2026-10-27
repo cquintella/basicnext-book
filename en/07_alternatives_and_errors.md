@@ -264,12 +264,9 @@ When the goal is simply to end a line, use a second `PRINT`, which already write
 
 ## Summary
 
-* An alternative type such as `STRING OR EOF` writes "this value may be one of several things" into the type.
-* `NULL`, `NA`, and `EOF` are three distinct markers of absence.
-* `IS` tests the member a value holds and narrows the binding inside the branch, or after a guard that returns.
-* Only an `IS` test narrows; neither an initializer nor an assignment does.
-* `INPUT` returns `STRING OR EOF` because input can end.
-* A failing operation returns `T OR Error`; the program handles the `Error` or returns it to its caller.
+Basic Next writes the possibility of absence and failure into types. An alternative type such as `STRING OR EOF` or `INTEGER OR Error` states that a value may be one of several things, and the compiler refuses to use it as any one of them until the program has checked which. The three markers of absence — `NULL` for no value, `NA` for a missing observation, `EOF` for the end of input — keep distinct meanings distinct. The `IS` test both answers the question and *narrows* the binding: inside the branch where it holds, or after a guard that leaves, the binding has the narrower type. Only an `IS` test narrows; neither an initializer nor an assignment does. Input is the first place a program meets these types, since `INPUT` returns `STRING OR EOF`. Errors follow the same pattern: an operation that can fail returns `T OR Error`, and the caller either handles the `Error` or returns it to its own caller, so that no failure passes unnoticed.
+
+The next chapter takes up a practical matter that the chapters so far have postponed: dividing a program into several files and using code written by others.
 
 ---
 
