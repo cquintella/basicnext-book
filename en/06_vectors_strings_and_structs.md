@@ -2,9 +2,11 @@
 
 [← Previous: Functions](05_functions.md) · [Contents](toc.md)
 
-Every value in the preceding chapters has been a single number, boolean, or string. Real data rarely comes one value at a time: a week of temperature readings, the cells of a grid, the host name and port of a server. This chapter introduces the two ways Basic Next groups values. A *vector* holds a fixed number of values of one type, reached by position. A *structure*, declared with `STRUCT`, holds a fixed set of named fields, each with its own type.
+Every value in the preceding chapters has been a single number, boolean, or string — a *scalar*, a value that is not made of other values. Real data rarely comes one value at a time: a week of temperature readings, the cells of a grid, the host name and port of a server. This chapter introduces the two ways Basic Next groups values. A *vector* holds a fixed number of values of one type, reached by position. A *structure*, declared with `STRUCT`, holds a fixed set of named fields, each with its own type.
 
 Both are *value types*. Assigning a vector or a structure to another binding, or passing it to a function, copies it, so that two bindings never share the same elements. The property matters more than it may first appear: a function that receives a vector cannot change the caller's data behind its back, and a reader who sees an assignment knows that the two bindings are independent from then on. Classes, in [chapter 9](09_classes_and_interfaces.md), make the opposite choice, and the contrast between the two is one of the main ideas of Part III.
+
+A type whose values are made of other values is a *composite* type, also called an *aggregate* type. The two composite types of this chapter correspond to the two classic ways of building one. A vector is an *array*: a sequence of elements of the same type, selected by an integer index. A structure is a *record*, in the term introduced by Pascal: a fixed collection of named fields, which may have different types and are selected by name (Wirth, 1971). Almost every language offers both, under various names, and the choice between them follows from the data: elements that are alike and are processed in order belong in an array; values that play different roles in one entity belong in a record.
 
 ## Fixed-Size Vectors
 
@@ -75,6 +77,8 @@ error[TYPE_MISMATCH]: Type mismatch: Expected INT32, but found FLOAT64 in vector
 For the same reason an integer element is never converted to floating point inside a vector literal: `[1, 2]` does not fill a `FLOAT[2]`, and the literal must be written `[1.0, 2.0]`. The exception for whole numbers described in [chapter 3](03_operators_and_conversions.md#explicit-conversion) applies to a single scalar initializer only, where the value and the target are both in plain view.
 
 ### Value Semantics
+
+A language must decide what assignment means for a composite value, and there are two possible answers. Under *value semantics*, assigning or passing a value copies it, so that each binding owns its own data. Under *reference semantics*, assigning or passing it copies only a reference, so that several bindings may designate the same data and a change made through one is visible through all. Value semantics makes data easy to reason about, because a value can only change through the binding that holds it; reference semantics avoids copying and allows data to be shared deliberately. Vectors and structures in Basic Next have value semantics, and classes ([chapter 9](09_classes_and_interfaces.md)) have reference semantics.
 
 Assigning a vector to another binding copies all of its elements. Afterwards the two vectors are independent, and a change to one is not visible through the other. The same holds for passing a vector to a function:
 
@@ -331,6 +335,10 @@ The final guard matters. If the sentinel were the first reading, `accepted` woul
 A vector holds a fixed number of values of one type, numbered from `0`; its length is part of its type, and every index is checked. A structure holds named fields of different types and nothing else. Both are value types: assignment and parameter passing copy them, so two bindings never share elements, and a function that changes one returns a new value. A parameter may leave a vector's length open and read it with `LEN`. `FOR EACH` visits the elements of a vector or the characters of a string when the position is not needed. `LEN` counts items and `SIZEOF` measures bytes. Bracket literals build vectors and structures, the latter by position, and a destructuring `LET` takes them apart again — a vector by position, a structure by field name.
 
 The next chapter addresses a question that every chapter so far has avoided: what a program does when a value it expects is not there.
+
+## References
+
+- Wirth, N. (1971). The Programming Language Pascal. *Acta Informatica*, 1(1), 35–63. https://doi.org/10.1007/BF00264291
 
 ---
 

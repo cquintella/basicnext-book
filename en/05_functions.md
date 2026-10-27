@@ -4,6 +4,19 @@
 
 Every program so far has been one function, `Start`. This chapter writes others: functions that take parameters, return a value, stop early when a check fails, and are passed around as values. The language requires each signature to be written in full and verifies at compile time that every path of a function that returns a value does return one.
 
+## Functions as Abstraction
+
+A *function* is a named piece of a program that performs one computation and can be invoked, or *called*, from elsewhere. The values it needs are passed to it when it is called, and the value it computes, if any, is handed back to the caller. Functions — also called *subroutines* or *procedures* — are the oldest and most important means of *abstraction* in programming: once a computation has a name, the rest of the program can use it by that name, without repeating or even knowing how it is carried out (Abelson and Sussman, 1996). A program built from small, well-named functions reads as a description of what it does, and each function can be understood, tested, and corrected on its own.
+
+A few terms describe the parts of a function and their roles:
+
+* The *signature* is the function's name, the types of its inputs, and the type of its result: everything a caller needs to know.
+* The *parameters* are the names, declared in the signature, by which the function refers to its inputs. The *arguments* are the values supplied for them at a particular call.
+* The *body* is the sequence of statements that performs the computation, and its *local* bindings exist only while a call is running.
+* The *return value* is the result the function hands back to its caller.
+
+Basic Next asks for the complete signature in every declaration. The caller never has to read a function's body to know how to call it or what it returns.
+
 ## Function Declarations
 
 A function is declared with `FUNCTION`, its name, its parameter list, `AS`, and its return type. The block closes with `END FUNCTION`. Each parameter is written like a binding, with its name, `AS`, and its type:
@@ -36,7 +49,7 @@ error[TYPE_MISMATCH]: Type mismatch: Expected INT32, but found STRING in functio
 error[TYPE_MISMATCH]: Type mismatch: Expected 1 argument(s), but found 2 argument(s) in function call.
 ```
 
-Functions are declared at the top level of a file, side by side with `Start`, and may be declared in any order: `Start` can call a function written below it. A function may also call itself:
+Functions are declared at the top level of a file, side by side with `Start`, and may be declared in any order: `Start` can call a function written below it. A function may also call itself. Such a function is *recursive*: it solves a problem by reducing it to a smaller instance of the same problem, and it must include a *base case*, an input it answers directly, so that the chain of calls ends. Here the factorial of `n` is `n` times the factorial of `n - 1`, and the base case is `n <= 1`:
 
 ```basic
 FUNCTION Factorial(n AS INT64) AS INT64
@@ -181,7 +194,9 @@ The program prints the usage line and exits with status `64`. Returning a status
 
 ## Function Values
 
-A function can be stored in a variable or passed as an argument. The type of a function value is written `FUNCTION(parameter-types) AS return-type`:
+In many languages a function is not only something to call but also a value: it can be stored in a variable, passed as an argument, and returned as a result, like a number or a string. Functions treated this way are called *first-class*, and a function that takes another function as a parameter is called a *higher-order* function. Higher-order functions let a program separate *what* to do to each value from *how* the values are visited: `ApplyTwice` below knows how to apply a transformation twice, and its caller decides which transformation.
+
+In Basic Next a function can be stored in a variable or passed as an argument. The type of a function value is written `FUNCTION(parameter-types) AS return-type`:
 
 ```basic
 FUNCTION Double(value AS INTEGER) AS INTEGER
@@ -219,6 +234,10 @@ Only functions declared at the top level of a file (and the `STATIC` methods of 
 A function in Basic Next states its complete contract in its first line: the type of every parameter and the type of its result, with `VOID` for none. Parameters are constant, so a value that changes during the call lives in a local, and a reader never has to ask whether a parameter still holds what the caller passed. Guard clauses deal with special cases at the top and leave the main path unindented. The compiler checks that every path of a function that returns a value does return one, without assuming that any loop runs, and `Start` may return an `INTEGER` that becomes the exit status of the process. Top-level functions are themselves values, of type `FUNCTION(...) AS ...`, and can be stored and passed; there are no closures that capture local state.
 
 So far every value has been a single number, boolean, or string. The next chapter groups values into vectors and structures.
+
+## References
+
+- Abelson, H., and Sussman, G. J. (1996). *Structure and Interpretation of Computer Programs* (2nd ed.). MIT Press.
 
 ---
 

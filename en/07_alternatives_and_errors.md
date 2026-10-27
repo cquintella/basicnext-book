@@ -8,7 +8,9 @@ This chapter introduces these *alternative types*, the three markers of absence,
 
 ## Alternative Types
 
-An alternative type lists its possible members joined with `OR`:
+Type theory distinguishes two ways of combining types. A *product* type holds one value of each of its component types at once: a structure with an `INTEGER` field and a `STRING` field holds both an integer and a string. A *sum* type holds one value of exactly one of its component types, together with the knowledge of which: a value of type "integer or nothing" is either an integer or nothing, never both (Pierce, 2002). Sum types are also called *tagged unions* or *variants*, and they are the natural way to describe a result that can take different forms.
+
+Basic Next calls its sum types *alternative types*. An alternative type lists its possible members joined with `OR`:
 
 ```basic
 FUNCTION Start() AS VOID
@@ -27,6 +29,8 @@ error[TYPE_MISMATCH]: Type mismatch: Expected initializer, but found missing ini
 The order of the members does not matter: `INTEGER OR NULL` and `NULL OR INTEGER` are the same type.
 
 ## `NULL`, `NA`, and `EOF`
+
+In many languages any reference may hold a special value, usually called `null`, that refers to nothing, and every use of a reference may therefore fail at run time. Hoare, who introduced the null reference in 1965, later called it his "billion-dollar mistake", for the defects it has caused since (Hoare, 2009). Basic Next keeps the notion of absence but makes it visible: a value can be absent only if its type says so, through an alternative that includes a marker of absence.
 
 `NULL`, `NA`, and `EOF` are literals for the three kinds of absence: no value, a missing data point, and the end of an input stream. Each is valid only where the declared type includes it as an alternative:
 
@@ -72,6 +76,8 @@ A value of alternative type cannot be used where one specific member is required
 ```
 error[TYPE_MISMATCH]: Type mismatch: Expected operands accepted by Plus, but found INT32 OR NULL and INT32 in binary operator Plus.
 ```
+
+The remedy is to test which member the value holds and to let the compiler take the result into account. When the type of a binding is refined by a test in this way, the binding is said to be *narrowed*, and the technique is known as *flow-sensitive typing*, because the type of the same name depends on where in the control flow it is used.
 
 `value IS T` is a `BOOLEAN` test of which member the value currently holds. Inside an `IF` whose condition is an `IS` test, the compiler *narrows* the binding: in the branch where the test is `TRUE`, the value has type `T`, and in the `ELSE` branch it has the remaining members.
 
@@ -191,7 +197,9 @@ END FUNCTION
 
 ## Errors
 
-Basic Next has no exceptions. An operation that can fail returns its result or an `Error`, and says so in its type: `INTEGER OR Error`, `STRING OR Error`. The caller cannot reach the result without first handling the error, so an unhandled failure is a compile-time error rather than a crash at run time.
+Languages handle operations that can fail in three main ways. The oldest is the *error code*: the operation returns a special value, such as `-1`, or sets a global indicator, and the caller is expected to check it — an expectation that is easy to forget, and nothing reports the omission. The second is the *exception*: a failing operation abandons the normal flow and transfers control to a handler further up the chain of calls, which keeps the normal path uncluttered but makes the possible failures of a call invisible at the place where it is written. The third represents the failure as a *value of a sum type*: the operation returns either its result or an error, the type says so, and the compiler requires the caller to distinguish the two before using the result.
+
+Basic Next takes the third approach and has no exceptions. An operation that can fail returns its result or an `Error`, and says so in its type: `INTEGER OR Error`, `STRING OR Error`. The caller cannot reach the result without first handling the error, so an unhandled failure is a compile-time error rather than a crash at run time.
 
 `ASC(text)` from [chapter 2](02_values_types_and_variables.md#string) is such an operation: it fails on an empty string, which has no first character. A function that calls it can handle the error or pass it on to its own caller by returning it:
 
@@ -267,6 +275,11 @@ When the goal is simply to end a line, use a second `PRINT`, which already write
 Basic Next writes the possibility of absence and failure into types. An alternative type such as `STRING OR EOF` or `INTEGER OR Error` states that a value may be one of several things, and the compiler refuses to use it as any one of them until the program has checked which. The three markers of absence — `NULL` for no value, `NA` for a missing observation, `EOF` for the end of input — keep distinct meanings distinct. The `IS` test both answers the question and *narrows* the binding: inside the branch where it holds, or after a guard that leaves, the binding has the narrower type. Only an `IS` test narrows; neither an initializer nor an assignment does. Input is the first place a program meets these types, since `INPUT` returns `STRING OR EOF`. Errors follow the same pattern: an operation that can fail returns `T OR Error`, and the caller either handles the `Error` or returns it to its own caller, so that no failure passes unnoticed.
 
 The next chapter takes up a practical matter that the chapters so far have postponed: dividing a program into several files and using code written by others.
+
+## References
+
+- Hoare, C. A. R. (2009). *Null References: The Billion Dollar Mistake*. Talk at QCon London 2009; recording published by InfoQ. https://www.infoq.com/presentations/Null-References-The-Billion-Dollar-Mistake-Tony-Hoare/
+- Pierce, B. C. (2002). *Types and Programming Languages*. MIT Press.
 
 ---
 

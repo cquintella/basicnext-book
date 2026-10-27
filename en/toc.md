@@ -28,6 +28,7 @@ This edition teaches the 0.6 line of Basic Next and is checked against the 0.6.1
 ## Part II — The Procedural Language
 
 ### 2. [Values, Types and Variables](02_values_types_and_variables.md)
+- Values, Types, and Bindings
 - Comments
 - Variables
 - Constants
@@ -38,7 +39,8 @@ This edition teaches the 0.6 line of Basic Next and is checked against the 0.6.1
 - Choosing Types Deliberately
 
 ### 3. [Operators and Conversions](03_operators_and_conversions.md)
-- Operators and Expressions
+- Expressions, Operators, and Precedence
+- The Operators
 - Compound Assignment, Increment and Decrement
 - Explicit Conversion
 
@@ -54,6 +56,7 @@ This edition teaches the 0.6 line of Basic Next and is checked against the 0.6.1
 - Worked Example
 
 ### 5. [Functions](05_functions.md)
+- Functions as Abstraction
 - Function Declarations
 - Parameters Are Constant
 - Guard Clauses Instead of Nesting
@@ -78,6 +81,7 @@ This edition teaches the 0.6 line of Basic Next and is checked against the 0.6.1
 - Errors
 
 ### 8. [Modules](08_modules.md)
+- Modules and Information Hiding
 - Two Files
 - A Program in Three Files
 - What Crosses the Boundary: `EXPORT`

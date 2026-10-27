@@ -12,7 +12,7 @@ An *object* is a value that carries two things: *data*, the current values of it
 
 A *class* is the declaration that defines a kind of object: the fields every object of the class has, and the operations they share. Each object created from a class is an *instance* of it. All instances of `Account` have a balance and know how to accept a deposit; each has its own balance.
 
-Keeping data and behaviour together makes *encapsulation* possible. Because the operations that change an object's state are declared with the state itself, the class can hide its fields from the rest of the program and expose only the operations, and those operations become the single place where the rules of the type are enforced. A balance that may only change through deposits and withdrawals is then a property the class guarantees, not a convention every caller must remember. Encapsulation in turn supports the two further ideas of this chapter: *inheritance*, by which one class is defined as an extension of another, and *polymorphism*, by which code written for a general kind of object works with any more specific kind.
+Keeping data and behaviour together makes *encapsulation* possible, an idea that grew out of the study of abstract data types (Liskov and Zilles, 1974) and became the foundation of object-oriented design (Meyer, 1997). Because the operations that change an object's state are declared with the state itself, the class can hide its fields from the rest of the program and expose only the operations, and those operations become the single place where the rules of the type are enforced. A balance that may only change through deposits and withdrawals is then a property the class guarantees, not a convention every caller must remember. Encapsulation in turn supports the two further ideas of this chapter: *inheritance*, by which one class is defined as an extension of another, and *polymorphism*, by which code written for a general kind of object works with any more specific kind.
 
 ## Objects Are Shared, Not Copied
 
@@ -387,6 +387,11 @@ error[PRIVATE_ACCESS]: Private member access: CLASS 'Counter' has only an implic
 A class joins data with the operations allowed on it, and an object of a class is shared by reference rather than copied. Members are `PRIVATE` unless declared otherwise, so the methods of a class are the only code that can change its private state, and every access to that state is written through `SELF`. A class has one constructor, which `NEW` runs; alternative ways of building objects are `STATIC` factory methods, and `STATIC` fields hold state that belongs to the class as a whole. A class may extend one base class, chaining constructors with `SUPER` and marking each redefined method `OVERRIDE`; calls are dispatched according to the object's actual class. An interface names a set of methods that unrelated classes can promise to provide, and the interface name can then be used as a type.
 
 All of this concerns what an object is and what it can do. The next chapter turns to its lifetime: when the memory of an object is reclaimed, and how a program controls it.
+
+## References
+
+- Liskov, B., and Zilles, S. (1974). Programming with Abstract Data Types. *ACM SIGPLAN Notices*, 9(4), 50–59. https://doi.org/10.1145/942572.807045
+- Meyer, B. (1997). *Object-Oriented Software Construction* (2nd ed.). Prentice Hall.
 
 ---
 

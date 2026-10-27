@@ -6,6 +6,16 @@ Before a program can decide anything or repeat anything, it needs somewhere to k
 
 The organizing idea throughout is that Basic Next requires the type of every binding to be written down and never changes a value's type without being told to. That single decision determines most of what follows, including the diagnostics, so the chapter states the rule in each context and shows what the compiler reports when it is not met.
 
+## Values, Types, and Bindings
+
+Three notions underlie every program, in any language, and the rest of the chapter refers to them constantly.
+
+A *value* is a datum the program computes with: the number `42`, the text `"Alice"`, the truth value `TRUE`. A value exists independently of any name; `42` is the same value wherever it appears.
+
+A *type* is a set of values together with the operations that are meaningful on them (Cardelli and Wegner, 1985). The type `INTEGER` is a range of whole numbers with addition, comparison, and the other integer operations; the type `STRING` is the set of texts with concatenation, indexing, and length. The type of a value therefore determines what may be done with it: two integers may be added, but a text may not be divided. Basic Next checks types before the program runs, from the program text alone — it is *statically typed* — and requires the programmer to write the type of every declaration.
+
+A *binding* associates a name with a value, so that the program can refer to the value by the name. When the value associated with a name can be replaced during execution, the binding is a *variable*; when it cannot, it is a *constant*. Basic Next makes the distinction with two keywords, `LET` and `CONST`. Because every binding in Basic Next has a declared type, the name carries the type with it: wherever `counter` appears, the reader and the compiler both know what kind of value it holds.
+
 ## Comments
 
 Basic Next has two comment forms: `//` runs to the end of the line, and `/* ... */` spans as many lines as needed.
@@ -24,6 +34,8 @@ The distinction worth holding onto is that code already states what a program do
 In practice this means documenting the rationale rather than the mechanics, describing the contract of anything a module exports, updating a comment in the same edit that changes the code it describes, and marking unfinished work with a recognizable token such as `TODO`, `FIXME`, or `NOTE` so that it can be found by searching. A comment explaining a line that would be clear under a better name should be replaced by the better name.
 
 ## Variables
+
+A variable can be pictured as a named place in which a value is kept. Three moments in the life of a variable are worth distinguishing, because the language treats each one explicitly: its *declaration*, which introduces the name and fixes its type; its *initialization*, which gives it a first value; and its *assignments*, each of which replaces the value with a new one of the same type. The name and the type stay the same throughout; only the value changes.
 
 A variable is declared with `LET`, followed by its name, `AS`, its type, and optionally an initial value. The type is fixed for the variable's entire lifetime; a binding declared `INTEGER` never holds a `FLOAT`.
 
@@ -78,6 +90,8 @@ LET string AS STRING = "ok"  // Accepted by 0.6.10; reserved by the specificatio
 Treat the rule as binding regardless. A name that differs from a keyword only in case forces the reader to look twice at every use, and it will stop compiling as soon as the toolchain enforces what the specification already states.
 
 ## Constants
+
+Many values in a program are not meant to change: a limit, a conversion factor, the name of the application. Declaring such a value as a constant states that fact in the program, and lets the compiler enforce it. A constant is a binding that is initialized once and never assigned again; a reader who sees its declaration knows its value everywhere it is used.
 
 `CONST` declares a binding that cannot be reassigned. It always requires an initializer, and an attempt to assign to it is rejected:
 
@@ -139,7 +153,11 @@ END FUNCTION
 
 ## Primitive Types
 
+The *primitive* types are the ones the language provides directly and that are not built from other types: numbers, truth values, text, and time. The composite types of later chapters — vectors, structures, classes — are all assembled from them.
+
 ### Numeric Types
+
+A computer represents a number in a fixed number of bits, and the choice of representation decides which numbers can be represented at all. An *integer* type of `n` bits holds whole numbers in a fixed range: from −2<sup>n−1</sup> to 2<sup>n−1</sup> − 1 when it is *signed*, and from 0 to 2<sup>n</sup> − 1 when it is *unsigned*. A *floating-point* type holds an approximation of a real number in the format of the IEEE 754 standard (IEEE, 2019): most decimal fractions, `0.1` among them, have no exact representation and are rounded to the nearest one that does (Goldberg, 1991). Integer arithmetic is therefore exact within its range, and floating-point arithmetic is approximate everywhere.
 
 The two general-purpose numeric types are `INTEGER`, a signed 32-bit integer identical to `INT32`, and `FLOAT`, an IEEE 754 double-precision number identical to `FLOAT64`. Use them unless a specific width is required by the problem.
 
@@ -369,6 +387,12 @@ Replace a literal with a named constant as soon as it appears in a condition or 
 Every binding states its type, and the type does not change. Constants fix a name to a value and are the place where a number's meaning is recorded. Integers do not wrap, and a literal must fit the type it is stored in. `PRINT` writes values separated by spaces and ends the line.
 
 Each of these makes a program longer to write and shorter to reason about. The next chapter combines values with operators and converts between types, always explicitly.
+
+## References
+
+- Cardelli, L., and Wegner, P. (1985). On Understanding Types, Data Abstraction, and Polymorphism. *ACM Computing Surveys*, 17(4), 471–523. https://doi.org/10.1145/6041.6042
+- Goldberg, D. (1991). What Every Computer Scientist Should Know About Floating-Point Arithmetic. *ACM Computing Surveys*, 23(1), 5–48. https://doi.org/10.1145/103162.103163
+- IEEE (2019). *IEEE Standard for Floating-Point Arithmetic* (IEEE Std 754-2019). https://doi.org/10.1109/IEEESTD.2019.8766229
 
 ---
 

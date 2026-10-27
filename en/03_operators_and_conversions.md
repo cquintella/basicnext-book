@@ -2,9 +2,48 @@
 
 [← Previous: Values, Types and Variables](02_values_types_and_variables.md) · [Contents](toc.md)
 
-The previous chapter declared values; this one combines them. Operators in Basic Next follow two rules that the rest of the chapter applies case by case: both operands of an operator have the same type, and a value changes type only when the program says so with `AS`.
+The previous chapter declared values; this one combines them into expressions and converts them from one type to another.
 
-## Operators and Expressions
+## Expressions, Operators, and Precedence
+
+An *expression* is a piece of program text that is evaluated to produce a value: a literal such as `3`, a name such as `price`, or a combination such as `price * 3`. An *operator* is a symbol or word that combines values to produce a new one, and the values it combines are its *operands*. An operator with two operands, such as `*`, is *binary*; one with a single operand, such as the minus sign in `-x`, is *unary*. Because the result of an operation is itself a value, expressions nest: `10 + price * quantity` combines the result of one operation with a third value.
+
+Nesting raises the question of which operation is applied first. The answer is given by two rules. *Precedence* decides between different operators: an operator of higher precedence is applied before one of lower precedence, so multiplication binds more tightly than addition, as in ordinary mathematics. *Associativity* decides between occurrences of operators of the same precedence: most operators group from the left, so `10 - 4 - 3` means `(10 - 4) - 3`, while exponentiation groups from the right. Parentheses override both rules.
+
+```basic
+FUNCTION Start() AS VOID
+    LET price AS INTEGER = 4
+    LET quantity AS INTEGER = 3
+    PRINT 10 + price * quantity          // 22
+    PRINT (10 + price) * quantity        // 42
+    PRINT 10 - 4 - 3                     // 3
+    PRINT 2 ** 3 ** 2                    // 512
+    PRINT price > 3 AND quantity < 5     // TRUE
+END FUNCTION
+```
+
+The precedence of every operator in Basic Next, from the tightest to the loosest binding, is:
+
+| Level | Operators | Associativity |
+| --- | --- | --- |
+| 1 (tightest) | call `f(x)`, member `a.b`, index `v[i]`, conversion `x AS T` | left |
+| 2 | `**` | right |
+| 3 | unary `-`, `NOT` | — |
+| 4 | `*`, `/`, `DIV`, `%` | left |
+| 5 | `+`, `-` | left |
+| 6 | `SHL`, `SHR` | left |
+| 7 | `<`, `<=`, `>`, `>=` | left |
+| 8 | `=`, `<>` | left |
+| 9 | `IS` | — |
+| 10 | `AND` | left |
+| 11 | `XOR` | left |
+| 12 (loosest) | `OR` | left |
+
+Two consequences are worth noting. Comparisons bind more loosely than arithmetic and more tightly than the logical operators, so `price > 3 AND quantity < 5` needs no parentheses. And `**` binds more tightly than unary minus, following mathematical convention, so `-2 ** 2` is `-4`, as −2² is in mathematics. Operands are always evaluated from left to right, and `AND` and `OR` on `BOOLEAN` operands evaluate the right operand only when the left one has not already decided the result.
+
+The rest of this chapter applies two rules that distinguish Basic Next from many languages. Both operands of a binary operator must have the same type, and a value changes type only when the program converts it explicitly.
+
+## The Operators
 
 Expressions are strictly typed. Operands of a binary operator must have the same type, and mixing types without an explicit conversion is rejected at compile time.
 
@@ -125,6 +164,8 @@ PRINT i          // 102
 The operand must be an assignable target (a variable, a field, or a vector element). Chaining operators like `i++++` is a syntax error.
 
 ## Explicit Conversion
+
+A *type conversion* produces, from a value of one type, a corresponding value of another: the `FLOAT` `3.0` from the `INTEGER` `3`, the text `"3"` from the number. Many languages perform some conversions *implicitly*, inserting them wherever an operation would otherwise not typecheck; such silent conversions are usually called *coercions*. They are convenient, and they are also a classic source of defects, because a reader cannot see where a value changed type or what was lost in the process. Basic Next has only *explicit* conversions, written with `AS`.
 
 Basic Next performs no implicit conversion, including between numeric types that would lose nothing. Assigning an `INTEGER` to a `FLOAT` binding is an error:
 

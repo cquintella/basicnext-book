@@ -2,15 +2,15 @@
 
 [← Previous: Operators and Conversions](03_operators_and_conversions.md) · [Contents](toc.md)
 
-A program whose statements run once, in written order, can only compute a fixed formula. Useful software must choose between alternatives and repeat work until a condition holds.
+*Control flow* is the order in which the statements of a program are executed. A program whose statements run once, in the order written, can only compute a fixed formula; useful software must also choose between alternatives and repeat work until a condition holds. Böhm and Jacopini (1966) showed that three ways of composing statements are sufficient to express any computation: *sequence*, in which statements run one after another; *selection*, in which a condition chooses which of two statements runs; and *iteration*, in which a statement repeats while a condition holds. Dijkstra (1968) drew the practical consequence: a program built only from these three forms, each with a single entry and a single exit, can be read and reasoned about from top to bottom, whereas unrestricted jumps (`GOTO`) make its behaviour depend on paths that the text does not show. This discipline is called *structured programming*, and Basic Next follows it strictly: it has selection (`IF`), several forms of iteration (`WHILE`, `REPEAT`, `FOR`), and no `GOTO`.
 
-Basic Next takes a strict and explicit approach to control flow:
+A *condition* is an expression whose value decides which way control goes. Basic Next adds three rules of its own to the structured forms:
 
 * Every construct opens with a keyword and closes with an explicit `END`.
 * Every condition must evaluate to a `BOOLEAN`.
 * Every loop exit or continuation explicitly names the kind of loop it affects.
 
-These rules ensure that the control structure of a program is immediately visible without relying on indentation rules, and common logic defects are caught at compile time.
+These rules make the control structure of a program visible without relying on indentation, and they turn several common logic defects into compile-time errors.
 
 ## Conditions Are Boolean
 
@@ -334,6 +334,11 @@ longest: 9 with 19 steps
 Control flow in Basic Next is explicit in three ways. Every condition is a `BOOLEAN` expression, so the threshold a program tests is always written down. Every block, conditional or loop, closes with an `END` that names it. And every jump out of a loop names the kind of loop it leaves. Within those rules the familiar forms are available: the block and single-line `IF`, the `WHILE` loop that tests before each iteration, the `REPEAT ... UNTIL` loop that tests after it, and the counted `FOR` that declares its own variable. A loop is a scope, so its bindings disappear at its `END`, and `STOP` ends the whole program with an exit code.
 
 The examples in this chapter all lived inside `Start`. The next chapter shows how to divide a program into functions, each with its own parameters and result.
+
+## References
+
+- Böhm, C., and Jacopini, G. (1966). Flow Diagrams, Turing Machines and Languages with Only Two Formation Rules. *Communications of the ACM*, 9(5), 366–371. https://doi.org/10.1145/355592.365646
+- Dijkstra, E. W. (1968). Go To Statement Considered Harmful. *Communications of the ACM*, 11(3), 147–148. https://doi.org/10.1145/362929.362947
 
 ---
 

@@ -4,6 +4,12 @@
 
 Every program so far fits in one file. Real programs do not, and they rely on code someone else wrote: the standard library and the capabilities of the host. Both needs are served by one mechanism. Every `.bn` file is a *module*; a module marks with `EXPORT` what other files may use, and a file brings another module in with `IMPORT`.
 
+## Modules and Information Hiding
+
+A *module* is a unit of a program that groups related declarations and controls which of them the rest of the program may use. The part it makes available is its *interface*; the rest is its *implementation*. The distinction matters because whatever other code can use, other code will come to depend on, and every dependency is a place where a change can break something far away. Parnas (1972) proposed the criterion that still guides the division of programs into modules: each module should hide a design decision that is likely to change — a data format, an algorithm, the details of a device — behind an interface that is not. This principle, *information hiding*, lets a module's implementation change freely as long as its interface stays the same.
+
+In Basic Next the unit of modularity is the file. A declaration is part of the module's interface only if it is marked `EXPORT`, and everything else is hidden. Another module gains access to that interface by importing it, under an alias that keeps the imported names apart from its own. The same encapsulation, applied within a single type rather than a file, reappears in [chapter 9](09_classes_and_interfaces.md) as the visibility of the members of a class.
+
 ## Two Files
 
 The smallest multi-file program is an entry file and one library beside it (both files are in [`examples/ch08-two-files/`](../examples/ch08-two-files/)). In `MathUtils.bn`:
@@ -192,6 +198,10 @@ A module may not import itself, directly or through other modules; a cycle is `I
 Every `.bn` file is a module, and the module that defines `Start` is the entry point of the program. A declaration is private to its file unless it is marked `EXPORT`, which makes a function, a type, or a constant available to other modules. `IMPORT path AS Alias` loads a module by its file path, matched letter for letter on every platform, and reaches its exports only through the alias, so that two modules never collide over a name. The standard library (`BN*` modules) and the capabilities of the host (`HOST.*`) are imported with the same statement. Every import in a program is resolved against one ordered search path, identical for `bni` and `bnc`, so a program cannot load one set of modules when interpreted and another when compiled.
 
 With functions, data, and modules in place, Part II is complete. Part III introduces objects, and with them the question of how memory is managed.
+
+## References
+
+- Parnas, D. L. (1972). On the Criteria to Be Used in Decomposing Systems into Modules. *Communications of the ACM*, 15(12), 1053–1058. https://doi.org/10.1145/361598.361623
 
 ---
 
