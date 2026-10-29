@@ -164,6 +164,104 @@ read 4 bytes: 66 78 0 6
 
 A region created with `NEW BYTE[n]` is the byte buffer ([chapter 10](10_memory.md#regions-and-pointers)). `ReadBytes` fills it and returns how many bytes it read, `EOF` at the end of the file, or an `Error`.
 
+## Directories, Private Files, Copying and Moving
+
+A *directory* is a file-system entry that holds other entries, files or directories, under names; a path is the chain of directory names that leads to an entry. Every process has a *working directory*, the directory a relative path starts from. A *symbolic link* is an entry whose content is another path: the operating system usually follows it, so that opening the link opens whatever it points to. A link inside a directory a program trusts can therefore point anywhere, and a program that writes "into its own folder" can be made to write somewhere else (IEEE and The Open Group, 2024). Finally, every entry carries *permissions* that say who may read or change it; on Unix they are the read, write and execute bits for the owner, the owner's group, and everyone else.
+
+`HOST.FileSystem` works on directories and whole files with eight methods:
+
+| Method | Meaning |
+| --- | --- |
+| `GetCurrentDirectory()` | The absolute path of the working directory, `STRING OR Error`. |
+| `SetCurrentDirectory(path)` | Makes the directory `path` the working directory. |
+| `CreateDirectory(path)` | Creates one directory; its parent must exist. |
+| `RemoveDirectory(path)` | Removes one empty directory. |
+| `IsDirectory(path)` | `TRUE` for a directory, `FALSE` for a file or a link, `BOOLEAN OR Error`. |
+| `OpenNew(path)` | Creates a new file and returns it open for writing, `FS.File OR Error`. |
+| `Copy(source, destination)` | Copies the bytes of one file into a new file. |
+| `Move(source, destination)` | Renames one entry on the same file system. |
+
+Three rules hold for all of them. None of them follows a symbolic link at the end of a path, so nothing is ever written through one: a link is not a directory, and an existing link is an existing name. None of them changes an existing entry when it creates one: `CreateDirectory`, `OpenNew` and `Copy` return an `Error` with `Code` `FS.ALREADY_EXISTS` instead. And what they create is *private*: on Unix a new directory gets mode `0700` and a new file `0600`, readable only by its owner, whatever the process's default mask is. `Copy` copies only the bytes, never the permissions or the owner of the source, so a copy cannot carry a program that runs with someone else's privileges. `Move` keeps the entry itself, with its permissions, and does not copy between file systems: across two disks it returns `FS.IO_FAILED`. On Windows a new entry takes the permissions of the folder that holds it, so it is private only where that folder is, as in the user's profile.
+
+`OpenNew` is the way to create a file that must stay private, such as a key or a downloaded secret; `FS.Open` with `FS.WRITE` creates a file readable according to the process's defaults and truncates an existing one. The program below creates a directory and a private file, copies and moves it, and shows the refusals:
+
+```basic
+IMPORT HOST.FileSystem AS FS
+
+FUNCTION Report(label AS STRING, result AS VOID OR Error) AS VOID
+    IF result IS Error THEN
+        PRINT label, "failed:", result.Message
+        PRINT "  ", result.Cause
+    ELSE
+        PRINT label, "done"
+    END IF
+END FUNCTION
+
+FUNCTION Start() AS VOID
+    Report("create reports", FS.CreateDirectory("reports"))
+    LET draft AS FS.File OR Error = FS.OpenNew("reports/draft.txt")
+    IF draft IS Error THEN
+        PRINT "cannot create the draft:", draft.Message
+        RETURN
+    END IF
+    draft.WriteLine("first line")
+    Report("close draft", draft.Close())
+    Report("copy", FS.Copy("reports/draft.txt", "reports/backup.txt"))
+    Report("move", FS.Move("reports/draft.txt", "reports/final.txt"))
+    Report("create final again", FS.Copy("reports/backup.txt", "reports/final.txt"))
+    Report("remove reports", FS.RemoveDirectory("reports"))
+    FS.DeleteFile("reports/final.txt")
+    FS.DeleteFile("reports/backup.txt")
+    Report("remove reports", FS.RemoveDirectory("reports"))
+END FUNCTION
+```
+
+Run in an empty directory, it prints:
+
+```
+create reports done
+close draft done
+copy done
+move done
+create final again failed: cannot copy "reports/backup.txt" to "reports/final.txt"
+   the path already exists, and an existing entry is never replaced or changed
+remove reports failed: cannot remove the directory "reports"
+   the directory has entries
+remove reports done
+```
+
+The working directory belongs to the whole process. `SetCurrentDirectory` changes it for every task of the program, so a program that runs tasks ([chapter 15](15_concurrency.md)) should not change directory while they run. Every relative path is resolved against it before any other check:
+
+```basic
+IMPORT HOST.FileSystem AS FS
+
+FUNCTION Start() AS VOID
+    FS.CreateDirectory("work")
+    LET isDirectory AS BOOLEAN OR Error = FS.IsDirectory("work")
+    PRINT "work is a directory:", isDirectory
+    LET entered AS VOID OR Error = FS.SetCurrentDirectory("work")
+    PRINT "entered:", NOT (entered IS Error)
+    LET note AS FS.File OR Error = FS.OpenNew("note.txt")
+    IF note IS FS.File THEN
+        note.Write("relative to work")
+        note.Close()
+    END IF
+    FS.SetCurrentDirectory("..")
+    LET exists AS BOOLEAN OR Error = FS.Exists("work/note.txt")
+    PRINT "work/note.txt exists:", exists
+    FS.DeleteFile("work/note.txt")
+    FS.RemoveDirectory("work")
+END FUNCTION
+```
+
+```
+work is a directory: TRUE
+entered: TRUE
+work/note.txt exists: TRUE
+```
+
+A missing path is `FS.NOT_FOUND`; `RemoveDirectory` of a directory that still holds entries is `FS.DIRECTORY_NOT_EMPTY`; `SetCurrentDirectory` or `RemoveDirectory` of a file or a link is `FS.IS_NOT_DIRECTORY`. Listing the entries of a directory is not part of `HOST.FileSystem` yet.
+
 ## Restricting File Access: the Sandbox
 
 A *sandbox* is an environment in which a program runs with less authority than the process that runs it would otherwise have. It applies the principle of least privilege ([chapter 12](12_host.md#programs-processes-and-the-operating-system)) to a single program: a tool that only needs to read its input directory and write its output directory should not be able to touch anything else, even if a defect or a malicious input leads it to try.
@@ -177,7 +275,7 @@ bni run app.bn --sandbox --read-root ./input --write-root ./output
 bnc app.bn -o app --sandbox --read-root ./input --write-root ./output
 ```
 
-A read root permits reading files below that directory; a write root permits creating, truncating, appending, renaming, or deleting files below it. The two are separate, so a program can consume its input without being able to alter it. Any other path is refused with an `Error` whose `Code` is `FS.POLICY_DENIED`:
+A read root permits reading files below that directory, and entering it or checking whether an entry is a directory; a write root permits creating, truncating, appending, renaming, copying to, or deleting files below it, and creating or removing directories. A root itself can be read but is never a write target: it cannot be removed or renamed. The two are separate, so a program can consume its input without being able to alter it. Any other path is refused with an `Error` whose `Code` is `FS.POLICY_DENIED`:
 
 ```basic
 IMPORT HOST.FileSystem AS FS
@@ -236,16 +334,17 @@ The same variables apply to `bni run`. A value the runtime does not recognise, s
 | --- | --- |
 | `CONFIG_INVALID` | `BN_FS_POLICY` or another policy variable holds a value the runtime does not recognise. |
 
-File operations report failures as `Error` values, not diagnostics; their codes (`FS.NOT_FOUND`, `FS.POLICY_DENIED`, and the others) are listed in [`host.md`](https://github.com/cquintella/BasicNext/blob/v0.6.10/language/0.6/host.md).
+File operations report failures as `Error` values, not diagnostics; their codes (`FS.NOT_FOUND`, `FS.POLICY_DENIED`, and the others) are listed in [`host.md`](https://github.com/cquintella/BasicNext/blob/v0.6.12/language/0.6/host.md).
 
 ## Summary
 
-Files are opened with `FS.Open`, which returns `FS.File OR Error`, and every file that is opened must be closed, because `Close` is where a failed write is finally reported. A file is used either for text, read and written in lines of UTF-8, or for bytes, moved through a `POINTER TO BYTE[]` region, but never for both; `ReadLine` returns `STRING OR EOF OR Error`, so the end of a file and a genuine failure are handled separately. By default a program has the file permissions of the process that runs it. The `--sandbox` option, with `--read-root` and `--write-root`, confines `HOST.FileSystem` to declared directories, and the environment variable `BN_FS_POLICY` can narrow that authority further when the program runs, but never widen it.
+Files are opened with `FS.Open`, which returns `FS.File OR Error`, and every file that is opened must be closed, because `Close` is where a failed write is finally reported. A file is used either for text, read and written in lines of UTF-8, or for bytes, moved through a `POINTER TO BYTE[]` region, but never for both; `ReadLine` returns `STRING OR EOF OR Error`, so the end of a file and a genuine failure are handled separately. Directories are created with `CreateDirectory` and removed with `RemoveDirectory`, a private file is created with `OpenNew`, and `Copy` and `Move` work on whole files; none of them follows a symbolic link, none of them changes an existing entry, and what they create is readable only by its owner on Unix. By default a program has the file permissions of the process that runs it. The `--sandbox` option, with `--read-root` and `--write-root`, confines `HOST.FileSystem` to declared directories, and the environment variable `BN_FS_POLICY` can narrow that authority further when the program runs, but never widen it.
 
 The next chapter moves from the local file system to other machines.
 
 ## References
 
+- IEEE and The Open Group (2024). *The Open Group Base Specifications Issue 8, IEEE Std 1003.1-2024* (POSIX.1). https://pubs.opengroup.org/onlinepubs/9799919799/
 - Unicode Consortium (2024). *The Unicode Standard, Version 16.0*. https://www.unicode.org/versions/Unicode16.0.0/
 
 ---
