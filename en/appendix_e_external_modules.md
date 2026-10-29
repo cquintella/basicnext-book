@@ -4,7 +4,7 @@
 
 Every `BN*` facility is an external module backed by a host or provider interface, and all of them obey the same small set of rules. An external module is never implicitly available in the language core; it requires an explicit `IMPORT` with an alias; it must report a missing or failing provider as a bounded, deterministic error; it keeps its normative API and its test fixtures separate from the core grammar; and it may be implemented by a Rust provider without any change to Basic Next syntax.
 
-`HOST` is the only built-in interface object in the specification. Everything else in the standard library, from `BNMath` and `BNString` to `BNCrypto`, `BNFfi`, and the constant-only `BNPallet`, follows these rules.
+`HOST` is the only built-in interface object in the specification. Everything else in the standard library, from `BNMath` and `BNString` to `BNCrypto`, `BNCompress`, `BNFfi`, and the constant-only `BNPallet`, follows these rules.
 
 ## Module search path
 

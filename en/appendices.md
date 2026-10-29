@@ -2,7 +2,7 @@
 
 [← Previous: Debugging and Profiling](16_debugging_and_profiling.md) · [Contents](toc.md)
 
-The appendices are reference material, lettered A to M. Appendices B, C, and D are short and live on this page; every other appendix has a page of its own. Links to the normative files of the Basic Next repository are pinned to the `v0.6.10` tag.
+The appendices are reference material, lettered A to N. Appendices B, C, and D are short and live on this page; every other appendix has a page of its own. Links to the normative files of the Basic Next repository are pinned to the `v0.6.10` tag, except the contracts that arrived with 0.6.11.
 
 | Appendix | Subject | Page |
 | --- | --- | --- |
@@ -19,6 +19,7 @@ The appendices are reference material, lettered A to M. Appendices B, C, and D a
 | K | `BNCrypto` | [appendix_k_bncrypto.md](appendix_k_bncrypto.md) |
 | L | `BNFfi` | [appendix_l_bnffi.md](appendix_l_bnffi.md) |
 | M | `BNDispatch` | [appendix_m_bndispatch.md](appendix_m_bndispatch.md) |
+| N | `BNCompress` | [appendix_n_bncompress.md](appendix_n_bncompress.md) |
 
 Appendix A keeps the file name `21_keywords.md` because the Vim and VS Code extensions download it from that address.
 

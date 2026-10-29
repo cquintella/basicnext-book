@@ -2,7 +2,7 @@
 
 [Contents](toc.md)
 
-> My name is Carlos Alvaro Quintella, and Basic Next is our (mine and yours) programming language. I started this work mainly because of a problem I could describe precisely but could not solve by changing tools. Over a career spent in systems architecture, IT infrastructure, information security, and teaching, I watched the distance grow between having an idea and having a program that runs it. The distance is not made of algorithms. It is made of building, configuring, learning frameworks and programming conventions, and of language details I had to remember rather than simply learn — not counting error messages that did little to help solve the problem.
+> My name is Carlos Alvaro Quintella, I'm the creator of Basic Next the programming language. I started this jorney because of a problem I could describe precisely but could not solve by switching the tools. Over a career in systems architecture, IT infrastructure, information security, and teaching, I watched the distance grow between having an idea and having a program that runs it. The distance is not made of algorithms. It is made of building, configuring, learning frameworks and programming conventions, and of language details I had to memorize rather than simply learn — not to mention error messages that did little to help solve the problem.
 
 In this preface I explain the reasoning that produced the language, state what it does and what it does not do, and describe how the rest of the book is organized. Language resources, community announcements, and toolchain releases are hosted at the official website, [http://basicnext.org](http://basicnext.org).
 

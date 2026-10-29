@@ -8,7 +8,7 @@
 IMPORT BNCrypto AS Crypto
 ```
 
-The normative contract is [`language/0.6/bncrypto.md`](https://github.com/cquintella/BasicNext/blob/v0.6.10/language/0.6/bncrypto.md).
+The normative contract is [`language/0.6/bncrypto.md`](https://github.com/cquintella/BasicNext/blob/v0.6.11/language/0.6/bncrypto.md).
 
 ## Digests
 
@@ -32,7 +32,7 @@ Digests are pure. They need no `HOST` capability, touch no file and no socket, a
 
 A digest is meant to be shown: printed, compared, written to a log. A key is the opposite — showing it is the bug. `BNCrypto` encodes that difference in the types rather than in a comment.
 
-`Crypto.Bytes` is an **opaque** buffer. There is no implicit conversion from `Bytes` to `STRING`, so key material cannot be printed, concatenated, or logged by accident. When you genuinely want to see the bytes, you ask for it:
+`Crypto.Bytes` is an **opaque** buffer. There is no implicit conversion from `Bytes` to `STRING`, so byte data cannot be printed, concatenated, or logged by accident. When you genuinely want to see the bytes, you ask for it:
 
 ```basic
 IMPORT BNCrypto AS Crypto
@@ -52,6 +52,40 @@ END FUNCTION
 
 `Bytes` is a resource, like a file or a socket: it is owned, and `RELEASE` ends that ownership. Releasing twice is reported, not ignored.
 
+## Keys: the `Key` type
+
+A key is not even a `Bytes`. Every member that needs secret material — the ciphers, HMAC, the signing functions — takes a `Crypto.Key`, and a `Key` has no `ToHex`: once bytes become a key, the program cannot read them back. A `Key` knows its length and its algorithm, and its memory is overwritten with zeros when its last reference ends, or earlier when you call `Zeroize()`.
+
+The usual way to get one is to let the operating system pick it. `GenerateKey` draws the key from the system's cryptographic random generator, at the length the algorithm needs:
+
+```basic
+IMPORT BNCrypto AS Crypto
+
+FUNCTION Start() AS VOID
+    LET key AS Crypto.Key OR Error = Crypto.GenerateKey(Crypto.ALG_AES_GCM_256)
+    IF key IS Error THEN
+        PRINT "no system entropy"
+        RETURN
+    END IF
+    PRINT key.Length(), key.Algorithm()
+    key.Zeroize()
+    LET nonce AS Crypto.Bytes = Crypto.FromText("0123456789ab")
+    LET sealed AS Crypto.Bytes OR Error = Crypto.SealAesGcm(key, nonce, Crypto.FromText("abc"), Crypto.FromText(""))
+    IF sealed IS Error THEN
+        PRINT sealed.Code
+    END IF
+END FUNCTION
+```
+
+```
+32 1
+1
+```
+
+`ALG_AES_GCM_256` is the constant `1` and its keys are 32 bytes. After `Zeroize()` the handle still exists but holds no key, so every operation with it returns an `Error` with code `1` (`INVALID_ARGUMENT`) and the program goes on. Generation itself returns `Key OR Error` because the system entropy source can fail; that failure is reported, never replaced by weaker randomness.
+
+A key that already exists — read from a key store, or agreed with another party — enters through `ImportKey`, which checks the length the algorithm requires. The bytes you imported it from are an ordinary `Bytes`: release them as soon as the `Key` exists.
+
 ## Reading malformed input
 
 `FromHex` returns `Bytes OR Error` rather than guessing. An odd-length string is not a byte sequence, so it is rejected instead of being silently truncated:
@@ -63,7 +97,29 @@ IF raw IS Error THEN
 END IF
 ```
 
-This is the same fail-closed posture the rest of the module takes: when an input cannot be interpreted, you get an `Error` you must handle, never a partial result that looks plausible.
+`ImportKey` takes the same posture with key lengths:
+
+```basic
+IMPORT BNCrypto AS Crypto
+
+FUNCTION Start() AS VOID
+    LET nonce AS Crypto.Bytes OR Error = Crypto.GenerateNonce(Crypto.ALG_AES_GCM_256)
+    IF nonce IS Crypto.Bytes THEN
+        PRINT nonce.Length()
+    END IF
+    LET short AS Crypto.Key OR Error = Crypto.ImportKey(Crypto.FromText("short"), Crypto.ALG_AES_GCM_256)
+    IF short IS Error THEN
+        PRINT short.Code
+    END IF
+END FUNCTION
+```
+
+```
+12
+1
+```
+
+When an input cannot be interpreted, you get an `Error` you must handle, never a partial result that looks plausible.
 
 ## Encrypting something
 
@@ -73,46 +129,57 @@ Encryption in `BNCrypto` is always *authenticated*: you do not get a mode that e
 IMPORT BNCrypto AS Crypto
 
 FUNCTION Start() AS VOID
-    LET key AS Crypto.Bytes = Crypto.FromText("0123456789abcdef0123456789abcdef")
+    LET material AS Crypto.Bytes = Crypto.FromText("0123456789abcdef0123456789abcdef")
+    LET key AS Crypto.Key OR Error = Crypto.ImportKey(material, Crypto.ALG_AES_GCM_256)
+    RELEASE material
+    IF key IS Error THEN
+        PRINT "wrong key length"
+        RETURN
+    END IF
     LET nonce AS Crypto.Bytes = Crypto.FromText("0123456789ab")
-    LET plain AS Crypto.Bytes = Crypto.FromText("abc")
     LET aad AS Crypto.Bytes = Crypto.FromText("hdr")
-
-    LET sealed AS Crypto.Bytes OR Error = Crypto.SealAesGcm(key, nonce, plain, aad)
+    LET sealed AS Crypto.Bytes OR Error = Crypto.SealAesGcm(key, nonce, Crypto.FromText("abc"), aad)
     IF sealed IS Error THEN
         PRINT "seal failed"
-    ELSE
-        PRINT sealed.ToHex()
+        RETURN
+    END IF
+    PRINT sealed.ToHex()
+    LET opened AS Crypto.Bytes OR Error = Crypto.OpenAesGcm(key, nonce, sealed, aad)
+    IF opened IS Crypto.Bytes THEN
+        PRINT opened.ToHex()
+    END IF
+    LET forged AS Crypto.Bytes OR Error = Crypto.OpenAesGcm(key, nonce, sealed, Crypto.FromText("other"))
+    IF forged IS Error THEN
+        PRINT "rejected"
     END IF
 END FUNCTION
 ```
 
-The key is 32 bytes and the nonce is 12. Those are not suggestions: a wrong length gives you an `Error`, not a padded guess.
+```
+f8cb8441c9b57bd8fd62663940f843f4e3cf1f
+616263
+rejected
+```
+
+The key is 32 bytes and the nonce is 12. Those are not suggestions: a wrong length gives you an `Error`, not a padded guess. The ciphertext is the three bytes of `abc` followed by a 16-byte tag.
 
 The `aad` — additional authenticated data — is covered by the tag but is *not* encrypted. It is for the parts of a message that must travel in the clear yet must not be swapped, such as a header or a record id.
 
 ### The failure you want
 
-Change one byte of the ciphertext, or open with a different `aad`, and `Open` returns `Error`. Not a shorter plaintext, not garbage — nothing. This is the whole point of authenticated encryption, and it is why `Open` returns `Bytes OR Error` and forces you to write the `IF`:
-
-```basic
-LET opened AS Crypto.Bytes OR Error = Crypto.OpenAesGcm(key, nonce, sealed, wrongAad)
-IF opened IS Error THEN
-    PRINT "rejected"        // this is the branch that runs
-END IF
-```
+Open with a different `aad`, change one byte of the ciphertext, or use another key, and `Open` returns `Error`. Not a shorter plaintext, not garbage — nothing. This is the whole point of authenticated encryption, and it is why `Open` returns `Bytes OR Error` and forces you to write the `IF`.
 
 ### One rule the language cannot enforce
 
-Never use the same nonce twice with the same key. With AES-GCM in particular, repeating a nonce does not merely weaken the message — it can expose the authentication key itself. `BNCrypto` cannot check this for you, because it never sees your other messages. Derive nonces from `HOST.Random`, or from a counter you are certain never repeats.
+Never use the same nonce twice with the same key. With AES-GCM in particular, repeating a nonce does not merely weaken the message — it can expose the authentication key itself. `BNCrypto` cannot check this for you, because it never sees your other messages.
+
+The fixed nonce in the example above is there so that the output can be printed and compared; a real program draws a fresh one for every message with `Crypto.GenerateNonce(Crypto.ALG_AES_GCM_256)`, which returns 12 bytes from the system's cryptographic random generator, or keeps a counter it is certain never repeats. `HOST.Random` is the wrong source: it is a statistical generator, and its output can be predicted.
 
 ## One implementation, two backends
 
-The digests do not live in the interpreter. They live in `bn_rt` behind the C ABI, which is what compiled binaries link against. `bni` and `bnc` therefore run the *same* code, and the test suite asserts that a compiled program prints byte-for-byte what the interpreted one prints. A backend that drifted would fail that test rather than quietly disagree.
+The cryptography does not live in the interpreter. It lives in one Rust library behind the C ABI, which is what compiled binaries link against and what the interpreter's provider calls. `bni` and `bnc` therefore run the *same* code, and the test suite asserts that a compiled program prints byte-for-byte what the interpreted one prints. A backend that drifted would fail that test rather than quietly disagree.
 
-`Bytes` works the same way: the handle travels as a pointer into a `bn_rt` table, so a compiled program creates, measures, renders and releases the buffer through the same code the interpreter uses.
-
-That includes the parts that can fail. `FromHex` returns `Bytes OR Error`, and when you narrow it with `IF raw IS Error … ELSE`, the buffer you get in the `ELSE` branch works the same compiled as interpreted — the handle is simply read out of the result value. Basic Next keeps the distinction between *"this program is wrong"* and *"this target cannot do it yet"*, and here there is no gap to report: both backends run the whole surface.
+`Bytes` and `Key` work the same way: the handle travels as a pointer into a runtime table, so a compiled program creates, measures, uses, zeroizes and releases them through the same code the interpreter uses, and both backends run the whole surface.
 
 ## Proving a message came from you
 
@@ -122,24 +189,29 @@ A signature answers a different question from a MAC. A MAC proves *someone who k
 IMPORT BNCrypto AS Crypto
 
 FUNCTION Start() AS VOID
-    LET seed AS Crypto.Bytes = Crypto.FromText("0123456789abcdef0123456789abcdef")
-    LET message AS Crypto.Bytes = Crypto.FromText("abc")
-
-    LET publicKey AS Crypto.Bytes OR Error = Crypto.Ed25519PublicKey(seed)
-    IF publicKey IS Error THEN
+    LET seed AS Crypto.Key OR Error = Crypto.ImportKey(Crypto.FromText("0123456789abcdef0123456789abcdef"), Crypto.ALG_ED25519)
+    IF seed IS Error THEN
         PRINT "bad seed"
-    ELSE
-        LET signature AS Crypto.Bytes OR Error = Crypto.Ed25519Sign(seed, message)
-        IF signature IS Error THEN
-            PRINT "sign failed"
-        ELSE
+        RETURN
+    END IF
+    LET message AS Crypto.Bytes = Crypto.FromText("abc")
+    LET publicKey AS Crypto.Bytes OR Error = Crypto.Ed25519PublicKey(seed)
+    LET signature AS Crypto.Bytes OR Error = Crypto.Ed25519Sign(seed, message)
+    IF publicKey IS Crypto.Bytes THEN
+        IF signature IS Crypto.Bytes THEN
             PRINT Crypto.Ed25519Verify(publicKey, message, signature)
+            PRINT Crypto.Ed25519Verify(publicKey, Crypto.FromText("abd"), signature)
         END IF
     END IF
 END FUNCTION
 ```
 
-Both schemes sign deterministically, so the same key and message always give the same signature. That is a testing convenience, not a security property you should rely on for anything else.
+```
+TRUE
+FALSE
+```
+
+The private seed is a `Key`; the public key and the signature are ordinary `Bytes`, because they are meant to be published. Both Ed25519 and ECDSA P-256 sign deterministically, so the same key and message always give the same signature. That is a testing convenience, not a security property you should rely on for anything else. A P-256 key from `GenerateKey` is always a valid scalar: values outside the curve order are drawn again.
 
 `Ed25519Verify` returns `FALSE` rather than an error. An invalid signature is an *answer*, not a malfunction — the caller is supposed to handle it as a normal outcome.
 
@@ -147,12 +219,44 @@ Both schemes sign deterministically, so the same key and message always give the
 
 `MlKem` and `MlDsa` are the NIST post-quantum standards: FIPS 203 for key encapsulation and FIPS 204 for signatures. They exist because an adversary can record encrypted traffic today and decrypt it years from now, once a large enough quantum computer exists. Anything whose confidentiality must outlive that horizon should be protected with them now.
 
-BN has no tuple, so the members that produce two values hand back one buffer with the parts concatenated, and `Slice` splits it:
+BN has no tuple, so the members that produce two values hand back one buffer with the parts concatenated, and `Slice` splits it. The private half becomes a `Key` again through `ImportKey`:
 
 ```basic
-LET pair AS Crypto.Bytes OR Error = Crypto.MlKemKeypair(seed)   // publicKey || privateKey
-LET publicKey AS Crypto.Bytes OR Error = Crypto.Slice(pair, 0, 1184)
-LET privateKey AS Crypto.Bytes OR Error = Crypto.Slice(pair, 1184, 64)
+IMPORT BNCrypto AS Crypto
+
+FUNCTION Start() AS VOID
+    LET seed AS Crypto.Key OR Error = Crypto.GenerateKey(Crypto.ALG_ML_KEM_768)
+    IF seed IS Error THEN
+        RETURN
+    END IF
+    LET pair AS Crypto.Bytes OR Error = Crypto.MlKemKeypair(seed)   // publicKey || privateKey
+    IF pair IS Error THEN
+        RETURN
+    END IF
+    LET publicKey AS Crypto.Bytes OR Error = Crypto.Slice(pair, 0, 1184)
+    LET privatePart AS Crypto.Bytes OR Error = Crypto.Slice(pair, 1184, 64)
+    IF publicKey IS Error OR privatePart IS Error THEN
+        RETURN
+    END IF
+    LET privateKey AS Crypto.Key OR Error = Crypto.ImportKey(privatePart, Crypto.ALG_ML_KEM_768)
+    LET sent AS Crypto.Bytes OR Error = Crypto.MlKemEncapsulate(publicKey)    // ciphertext || sharedSecret
+    IF privateKey IS Error OR sent IS Error THEN
+        RETURN
+    END IF
+    LET ciphertext AS Crypto.Bytes OR Error = Crypto.Slice(sent, 0, 1088)
+    LET shared AS Crypto.Bytes OR Error = Crypto.Slice(sent, 1088, 32)
+    IF ciphertext IS Error OR shared IS Error THEN
+        RETURN
+    END IF
+    LET received AS Crypto.Bytes OR Error = Crypto.MlKemDecapsulate(privateKey, ciphertext)
+    IF received IS Crypto.Bytes THEN
+        PRINT received.ToHex() = shared.ToHex()
+    END IF
+END FUNCTION
+```
+
+```
+TRUE
 ```
 
 The sizes are fixed by the standard, so the split is unambiguous. `Slice` refuses a window that runs past the end rather than returning a short buffer that might be mistaken for a key.
@@ -165,7 +269,7 @@ The same caution applies to AEAD nonces, and for the same reason.
 
 ## What is not here yet
 
-`BNCrypto` covers digests, `Bytes`, authenticated encryption, HMAC, Argon2id, Ed25519, ECDSA P-256, ML-KEM-768 and ML-DSA-65. What it does not do is decide policy for you: it has no opinion about where keys live, how long they last, or who may use them. Key storage, rotation and access control are the program's job, and the next buckets — OAuth and encrypted ORM fields — build on this one rather than extending it.
+`BNCrypto` covers digests, `Bytes`, `Key`, system randomness, authenticated encryption, HMAC, Argon2id, Ed25519, ECDSA P-256, ML-KEM-768 and ML-DSA-65. What it does not do is decide policy for you: it has no opinion about where keys live, how long they last, or who may use them. Key storage, rotation and access control are the program's job.
 
 One honest caveat on the post-quantum pair: every other algorithm here is checked byte-for-byte against a second, independent implementation. The post-quantum ones are not, because no independent implementation was available to check against. They are verified by round-trip, by tamper rejection, by the standard's object sizes, and by the upstream crates' own Wycheproof test suites. The contract document says so too; you should know which guarantees rest on what.
 

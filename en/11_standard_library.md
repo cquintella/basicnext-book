@@ -26,6 +26,8 @@ The available surface includes:
 - Trigonometry: `SIN`, `COS`, `TAN`, `ASIN`, `ACOS`, `ATAN`, `ATAN2`.
 - Text parsing: `VAL(text AS STRING) AS FLOAT`.
 - Descriptive statistics: `MEAN`, `MEDIAN`, `MODE`, `STDEV`, `VARIANCE`, `RANGE`, `QUARTILE1`, `QUARTILE3`, the population forms `PVariance` and `PStdev` (divisor `n` instead of `n − 1`), `Quantile(values, p)` (R type 7), the shape measures `Skewness`, `Kurtosis` (excess), `PSkewness` and `PKurtosis`, and `Covariance(x, y)` and `Correlation(x, y)` of two vectors of the same length.
+- Algebraic reductions: `Sum`, `Product`, and `Dot`.
+- Student's t: `StudentT` (cumulative), `StudentTPvalue` (two-tailed), and `StudentTQuantile`.
 - Range constants: `MAX_INTEGER`, `MIN_INTEGER`, `MAX_FLOAT`, `MIN_FLOAT` (and width-specific variants).
 - Constants: the attributes `Pi` and `Euler`, the `FLOAT` values closest to π and e.
 - Integer divisors: `Gcd` (greatest common divisor) and `Lcm` (least common multiple), on `INT64`.
@@ -72,6 +74,39 @@ END FUNCTION
 ```
 
 A plain left-to-right sum of `readings` gives a mean of `0.25`: the first `1.0` vanishes next to `1e16`, and only the last one survives. If the running sum of finite values grows past the largest `FLOAT`, the mean is `INF` (or `-INF`), so the order of the values can matter at that extreme.
+
+### Sums and products
+
+`Sum` is that same compensated sum, without dividing by the count. `Product` multiplies the elements. `Dot` multiplies two vectors element by element and adds those products. All three return `FLOAT`, walk the vector in index order, and agree bit for bit on `bni` and `bnc`. An empty sum is `0.0` and an empty product is `1.0`. `Dot` of two vectors of different length stops the program with `VECTOR_LENGTH_MISMATCH`.
+
+```basic
+IMPORT BNMath AS Math
+
+FUNCTION Start() AS VOID
+    LET readings AS FLOAT[4] = [10000000000000000.0, 1.0, -10000000000000000.0, 1.0]
+    PRINT Math.Sum(readings)                                          // 2.0
+    PRINT Math.Product([2.0, -3.0, 4.0])                              // -24.0
+    PRINT Math.Dot([1.0, 2.0, 3.0], [4.0, 5.0, 6.0])                  // 32.0
+END FUNCTION
+```
+
+The four readings sum to `2.0`: both ones survive next to `1e16`. A plain left-to-right sum of the same values is `1.0`, because the first `1.0` is lost.
+
+### Student's t
+
+A *t* statistic says how many standard errors a result sits from a hypothesis, which is the question a small sample can actually answer. `StudentT(t, df)` is the probability of a draw no larger than `t` from Student's t distribution with `df` degrees of freedom (the lower cumulative value). `StudentTPvalue(t, df)` is the two-tailed probability of a draw at least that far from zero. `StudentTQuantile(p, df)` is the value whose cumulative probability is `p`: the 0.975 quantile is the critical value of a two-sided 5% test.
+
+```basic
+IMPORT BNMath AS Math
+
+FUNCTION Start() AS VOID
+    PRINT Math.StudentT(1.0, 5.0)                    // 0.8183912661754387
+    PRINT Math.StudentTPvalue(1.0, 5.0)              // 0.36321746764912266
+    PRINT Math.StudentTQuantile(0.975, INF)          // 1.9599639845400518
+END FUNCTION
+```
+
+`df` of `0` or less is `NAN`. A `p` outside `0` to `1` is `NAN`; `p` of `0`, `0.5` and `1` are `-INF`, `0.0` and `INF`. Infinite degrees of freedom is the standard normal, so the last line is the normal 0.975 quantile. The three functions are one shared rule, so the interpreter and the compiler print the same digits.
 
 ### Numeric Limits
 
@@ -169,9 +204,10 @@ The remaining modules are covered by their own appendices:
 * `BNWeb` — HTTP client and server, routes, cookies, sessions, static files ([Appendix H](appendix_h_bnweb.md); introduced in [chapter 14](14_networking.md)).
 * `BNData` — CSV and tabular data frames ([Appendix I](appendix_i_bndata.md)).
 * `BNSqlite` — embedded SQLite databases ([Appendix J](appendix_j_bnsqlite.md)).
-* `BNCrypto` — digests, authenticated encryption, signatures ([Appendix K](appendix_k_bncrypto.md)).
+* `BNCrypto` — digests, `Key` (generated, imported, and wiped), authenticated encryption, signatures ([Appendix K](appendix_k_bncrypto.md)).
 * `BNFfi` — calling C libraries ([Appendix L](appendix_l_bnffi.md)).
 * `BNDispatch` — queues, tasks, and synchronization ([Appendix M](appendix_m_bndispatch.md); introduced in [chapter 15](15_concurrency.md)).
+* `BNCompress` — DEFLATE, Gzip, and ZIP archives ([Appendix N](appendix_n_bncompress.md)).
 
 All of them follow the conventions of [Appendix E](appendix_e_external_modules.md).
 
@@ -180,11 +216,12 @@ All of them follow the conventions of [Appendix E](appendix_e_external_modules.m
 | Diagnostic | Raised when |
 | --- | --- |
 | `NUMERIC_OVERFLOW` | `Gcd` or `Lcm` produce a result that does not fit `INT64`. |
+| `VECTOR_LENGTH_MISMATCH` | `Dot` is called with two vectors of different length. |
 | `INVALID_DATE`, `INVALID_TIME`, `INVALID_TIMEZONE`, `PARSE_ERROR` | Temporal text does not match its standard form. |
 
 ## Summary
 
-The standard library consists of `BN*` modules, each imported with an alias and none available otherwise. `BNMath` provides IEEE 754 mathematics, descriptive statistics, the limits of the numeric types, and constants such as `Pi`, with results that are identical under the interpreter and the compiler. `BNString` wraps text in an object with operations for searching, trimming, case conversion, and tokenizing. `BNPallet` shows that a module may consist of constants alone. Dates and times have no literal form: they are built from their standard text forms, and every conversion between an instant and a local calendar value names its time zone explicitly. The remaining modules, from JSON to SQLite and cryptography, are documented in the appendices.
+The standard library consists of `BN*` modules, each imported with an alias and none available otherwise. `BNMath` provides IEEE 754 mathematics, descriptive statistics, sums and products, Student's t, the limits of the numeric types, and constants such as `Pi`, with results that are identical under the interpreter and the compiler. `BNString` wraps text in an object with operations for searching, trimming, case conversion, and tokenizing. `BNPallet` shows that a module may consist of constants alone. Dates and times have no literal form: they are built from their standard text forms, and every conversion between an instant and a local calendar value names its time zone explicitly. The remaining modules, from JSON to SQLite and cryptography, are documented in the appendices.
 
 The next chapter turns from libraries written in Basic Next to the capabilities that only the host can provide.
 

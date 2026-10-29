@@ -82,4 +82,4 @@ The `Code` of a `BNDispatch` `Error` is one of these constants of the module (`D
 
 ---
 
-[Back to Contents →](toc.md)
+[Next: Appendix N: BNCompress →](appendix_n_bncompress.md)

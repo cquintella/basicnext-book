@@ -7,7 +7,7 @@
 
 ![Basic Next Book Cover](../cover.jpg)
 
-> **Note:** This tutorial covers the **0.6 line** of Basic Next, checked against the 0.6.10 toolchain. The normative specification lives in [`language/0.6/0.6.md`](https://github.com/cquintella/BasicNext/blob/v0.6.10/language/0.6/0.6.md), with the grammar in [`0.6.ebnf`](https://github.com/cquintella/BasicNext/blob/v0.6.10/language/0.6/0.6.ebnf) and the reserved word list in [`keywords.md`](https://github.com/cquintella/BasicNext/blob/v0.6.10/language/0.6/keywords.md). Official releases, documentation, and news are published at [http://basicnext.org](http://basicnext.org).
+> **Note:** This tutorial covers the **0.6 line** of Basic Next, checked against the 0.6.11 toolchain. The normative specification lives in [`language/0.6/0.6.md`](https://github.com/cquintella/BasicNext/blob/v0.6.10/language/0.6/0.6.md), with the grammar in [`0.6.ebnf`](https://github.com/cquintella/BasicNext/blob/v0.6.10/language/0.6/0.6.ebnf) and the reserved word list in [`keywords.md`](https://github.com/cquintella/BasicNext/blob/v0.6.10/language/0.6/keywords.md). Official releases, documentation, and news are published at [http://basicnext.org](http://basicnext.org).
 
 This chapter installs the toolchain, writes a first program, checks it, runs it with the interpreter, compiles it to a native executable, and reads the message the compiler gives when a program is wrong. Everything else in the book builds on these four steps.
 

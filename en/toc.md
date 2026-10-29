@@ -2,7 +2,7 @@
 
 Official website: [http://basicnext.org](http://basicnext.org)
 
-This edition teaches the 0.6 line of Basic Next and is checked against the 0.6.10 toolchain.
+This edition teaches the 0.6 line of Basic Next and is checked against the 0.6.11 toolchain.
 
 ## [Preface](00_preface.md)
 - The Problem the Language Addresses
@@ -115,6 +115,8 @@ This edition teaches the 0.6 line of Basic Next and is checked against the 0.6.1
 ### 11. [The Standard Library](11_standard_library.md)
 - Languages and Their Libraries
 - `BNMath`
+- Sums and products
+- Student's t
 - `BNString`
 - `BNPallet`
 - Dates and Times
@@ -171,6 +173,7 @@ This edition teaches the 0.6 line of Basic Next and is checked against the 0.6.1
 - Appendix K: [`BNCrypto`](appendix_k_bncrypto.md)
 - Appendix L: [`BNFfi` (C Foreign Function Interface)](appendix_l_bnffi.md)
 - Appendix M: [`BNDispatch`](appendix_m_bndispatch.md)
+- Appendix N: [`BNCompress`](appendix_n_bncompress.md)
 
 ---
 
